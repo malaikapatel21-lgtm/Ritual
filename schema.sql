@@ -329,3 +329,130 @@ end;
 $$ language plpgsql stable security definer;
 
 grant execute on function public.venue_dashboard_stats(uuid) to authenticated;
+
+-- ------------------------------------------------------------
+-- admins — allowlist of founder/staff accounts with full
+-- cross-venue access, for the internal ops dashboard. No
+-- self-serve signup: rows are added by hand (SQL editor).
+-- ------------------------------------------------------------
+create table if not exists public.admins (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admins enable row level security;
+
+create policy "admins can see their own admins row"
+  on public.admins for select using (auth.uid() = user_id);
+
+create or replace function public.is_admin()
+returns boolean as $$
+  select exists (select 1 from public.admins where user_id = auth.uid());
+$$ language sql stable security definer;
+
+grant execute on function public.is_admin() to authenticated;
+
+-- ------------------------------------------------------------
+-- venues / rituals previously had no RLS at all. In Supabase that
+-- doesn't mean "locked down" — it means anon/authenticated can read
+-- *and write*, since Supabase grants CRUD to those roles by default
+-- and RLS is what restricts it. That was harmless while nothing
+-- ever wrote to these tables client-side, but the admin dashboard
+-- is the first thing that needs write access, so this is the right
+-- time to close it: public read stays exactly as before, writes
+-- become admin-only.
+-- ------------------------------------------------------------
+alter table public.venues enable row level security;
+alter table public.rituals enable row level security;
+
+create policy "venues are publicly readable"
+  on public.venues for select using (true);
+create policy "admins can insert venues"
+  on public.venues for insert with check (is_admin());
+create policy "admins can update venues"
+  on public.venues for update using (is_admin());
+create policy "admins can delete venues"
+  on public.venues for delete using (is_admin());
+
+create policy "rituals are publicly readable"
+  on public.rituals for select using (true);
+create policy "admins can insert rituals"
+  on public.rituals for insert with check (is_admin());
+create policy "admins can update rituals"
+  on public.rituals for update using (is_admin());
+create policy "admins can delete rituals"
+  on public.rituals for delete using (is_admin());
+
+-- ------------------------------------------------------------
+-- admin_overview / admin_waiting_signups — the ops dashboard's
+-- cross-venue reads. Same security-definer + explicit is_admin()
+-- check pattern as the venue dashboard's RPCs, just without
+-- per-venue scoping — an admin sees every neighborhood at once.
+-- ------------------------------------------------------------
+create or replace function public.admin_overview()
+returns table (
+  ritual_id uuid,
+  ritual_type text,
+  day_of_week smallint,
+  start_time time,
+  venue_id uuid,
+  venue_name text,
+  neighborhood text,
+  city text,
+  waiting_count bigint,
+  active_pod_count bigint,
+  member_count bigint,
+  avg_current_streak numeric
+) as $$
+begin
+  if not is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  return query
+  select
+    r.id,
+    r.ritual_type,
+    r.day_of_week,
+    r.start_time,
+    v.id,
+    v.name,
+    v.neighborhood,
+    v.city,
+    (select count(*) from public.ritual_signups rs where rs.ritual_id = r.id and rs.status = 'waiting'),
+    (select count(*) from public.pods p where p.ritual_id = r.id and p.status = 'active'),
+    (
+      select count(*) from public.pod_members pm
+      join public.pods p on p.id = pm.pod_id
+      where p.ritual_id = r.id and p.status = 'active'
+    ),
+    (
+      select coalesce(avg(s.current_streak), 0) from public.streaks s
+      join public.pods p on p.id = s.pod_id
+      where p.ritual_id = r.id and p.status = 'active'
+    )
+  from public.rituals r
+  join public.venues v on v.id = r.venue_id
+  order by v.neighborhood, v.name, r.ritual_type;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.admin_overview() to authenticated;
+
+create or replace function public.admin_waiting_signups(p_ritual_id uuid)
+returns table (signup_id uuid, user_id uuid, full_name text, created_at timestamptz) as $$
+begin
+  if not is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  return query
+  select rs.id, rs.user_id, pr.full_name, rs.created_at
+  from public.ritual_signups rs
+  join public.profiles pr on pr.id = rs.user_id
+  where rs.ritual_id = p_ritual_id and rs.status = 'waiting'
+  order by rs.created_at asc;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.admin_waiting_signups(uuid) to authenticated;

@@ -21,7 +21,7 @@
 
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import Anthropic from "npm:@anthropic-ai/sdk@0.112.5";
-import { sendExpoPushToUsers } from "../_shared/expoPush.ts";
+import { createPod } from "../_shared/createPod.ts";
 
 const DEFAULT_MIN_POD_SIZE = 4;
 const DEFAULT_MAX_POD_SIZE = 8;
@@ -251,47 +251,7 @@ async function matchPods() {
     }
 
     for (const podSignups of podsOfSignups) {
-      const { data: pod, error: podError } = await supabase
-        .from("pods")
-        .insert({ ritual_id: ritualId })
-        .select("id")
-        .single();
-
-      if (podError) throw podError;
-
-      const memberRows = podSignups.map((s) => ({
-        pod_id: pod.id,
-        user_id: s.user_id,
-      }));
-      const { error: membersError } = await supabase
-        .from("pod_members")
-        .insert(memberRows);
-      if (membersError) throw membersError;
-
-      const streakRows = podSignups.map((s) => ({
-        pod_id: pod.id,
-        user_id: s.user_id,
-        current_streak: 0,
-        longest_streak: 0,
-      }));
-      const { error: streaksError } = await supabase
-        .from("streaks")
-        .insert(streakRows);
-      if (streaksError) throw streaksError;
-
-      const { error: updateError } = await supabase
-        .from("ritual_signups")
-        .update({ status: "matched" })
-        .in("id", podSignups.map((s) => s.id));
-      if (updateError) throw updateError;
-
-      await sendExpoPushToUsers(
-        supabase,
-        podSignups.map((s) => s.user_id),
-        "You're in a pod!",
-        "Your weekly ritual pod is ready — say hi to your group.",
-      );
-
+      await createPod(supabase, ritualId, podSignups);
       podsCreated++;
       usersMatched += podSignups.length;
       if (usedAI) aiMatchedPods++;

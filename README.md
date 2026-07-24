@@ -96,6 +96,34 @@ User signs up for a ritual
   owner is a manual SQL insert (`venue_owners`) until there's demand
   to automate it.
 
+**Phase 4 — admin/ops tooling**
+- An internal ops dashboard (`admin/`) for the founder: a cross-venue
+  overview of every ritual in every neighborhood, venue and ritual
+  CRUD (including regenerating a ritual's `check_in_code`), and a
+  manual-match tool that hand-forms a pod from selected waiting
+  signups instead of waiting for the weekly job. This is distinct
+  from the venue partner dashboard — that one is read-only and scoped
+  to a single venue owner's own numbers; this one has write access
+  and sees everything, gated by a new `admins` allowlist table.
+- Building this surfaced a real gap: `venues` and `rituals` had no RLS
+  at all, meaning Supabase's default role grants gave every signed-in
+  user full read/write on both. Harmless while nothing wrote to them
+  client-side, but the first thing that needed write access closes it
+  properly — both tables now have public-read, admin-only-write
+  policies.
+- Manual pod formation reuses the exact pod-creation logic the
+  automatic matcher uses (`supabase/functions/_shared/createPod.ts`,
+  extracted from `matchPods.ts` so the two paths can't drift), with
+  one deliberate difference: it skips the `min_pod_size` guardrail,
+  since a human manually deciding "these people should start now" is
+  the entire point of an override. `max_pod_size` still applies as a
+  sanity bound.
+- Still deliberately out of scope: self-serve `venue_owners`
+  assignment by email. That needs an admin-privileged user lookup,
+  which is more sensitive than the CRUD above and doesn't have enough
+  demand yet — still a manual SQL insert, per
+  `venue-dashboard/README.md`.
+
 ## Stack
 
 - **Frontend:** React Native (Expo) — see `mobile/`
@@ -133,6 +161,17 @@ User signs up for a ritual
   waiting/pod/member counts, average streak, and 4-week check-in
   counts, gated by a `venue_owners` link so an owner only ever sees
   their own venue's numbers. See `venue-dashboard/README.md` for setup.
+- `supabase/functions/_shared/createPod.ts` — the pod-creation routine
+  (seat members, initialize streaks, flip signups to matched, push
+  notify) shared by `matchPods` and the new `adminFormPod`.
+- `supabase/functions/adminFormPod` — lets an admin manually form a
+  pod from hand-picked waiting signups, bypassing `min_pod_size` on
+  purpose; re-checks `is_admin()` server-side rather than trusting the
+  caller.
+- `admin/` — the Phase 4 ops dashboard: cross-venue ritual overview,
+  venue/ritual CRUD, check-in code regeneration, and the manual-match
+  tool. Gated by a new `admins` allowlist table and `is_admin()`. See
+  `admin/README.md` for setup.
 
 ## The one number that matters before you monetize
 
@@ -157,6 +196,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase functions deploy matchPods
 supabase functions deploy sendSessionReminders
 supabase functions deploy sendPush
+supabase functions deploy adminFormPod
 
 # 3. Schedule matchPods weekly (Sunday 9pm UTC) and
 #    sendSessionReminders daily (9am UTC) via pg_cron.
