@@ -28,7 +28,7 @@ export default function SignIn() {
   return (
     <Screen accent={colors.berry} style={styles.container}>
       <Animated.View entering={FadeInDown.duration(600)}>
-        <Text style={styles.title}>Ritual Pods</Text>
+        <Text style={styles.title}>Ritual</Text>
         <Text style={styles.subtitle}>Enter your email and we'll send you a sign-in code.</Text>
       </Animated.View>
 

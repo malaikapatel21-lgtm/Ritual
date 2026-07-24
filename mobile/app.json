@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Ritual Pods",
-    "slug": "ritual-pods",
+    "name": "Ritual",
+    "slug": "ritual",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -37,7 +37,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Ritual Pods uses the camera to scan the check-in code at your venue."
+          "cameraPermission": "Ritual uses the camera to scan the check-in code at your venue."
         }
       ]
     ],

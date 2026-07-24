@@ -1,4 +1,4 @@
-# Ritual Pods — MVP Build Plan
+# Ritual — MVP Build Plan
 
 Recurring micro-groups (5–8 people) anchored to a real venue and a
 weekly ritual (walk, sauna, run club, yoga). Wellness is the reason

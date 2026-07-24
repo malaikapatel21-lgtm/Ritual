@@ -1,5 +1,5 @@
 -- ============================================================
--- RITUAL PODS — CORE SCHEMA
+-- RITUAL — CORE SCHEMA
 -- Run this first in Supabase (SQL editor or migration).
 -- Creates every table the app touches: profiles, venues, rituals,
 -- signups, pods, attendance, streaks, messages.

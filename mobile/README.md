@@ -1,4 +1,4 @@
-# Ritual Pods — mobile app
+# Ritual — mobile app
 
 Expo (React Native) app for the core loop: onboarding into a ritual, a
 pod home screen, chat, push notifications, and venue-code check-in.
