@@ -73,10 +73,21 @@ User signs up for a ritual
 
 ## Stack
 
-- **Frontend:** React Native or Flutter
+- **Frontend:** React Native (Expo) — see `mobile/`
 - **Backend:** Supabase (Postgres + Auth + Realtime + Edge Functions)
 - **Scheduling:** pg_cron (built into Supabase) triggering `matchPods`
 - **Push:** Expo push notifications
+
+## What's built so far
+
+- `schema.sql`, `streak_update.sql`, `supabase/functions/matchPods` —
+  the full backend: tables, RLS, the weekly matcher, and the
+  check-in/streak RPC.
+- `web/` — a Phase 0 signup page for validating demand in a single
+  neighborhood before building the full app.
+- `mobile/` — the Phase 1 Expo app: magic-code sign-in, the
+  onboarding wizard, and the pod home screen with check-in. See
+  `mobile/README.md` for setup.
 
 ## The one number that matters before you monetize
 
