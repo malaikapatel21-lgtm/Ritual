@@ -1,7 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { colors, fonts } from "@/lib/theme";
 
 /** Full-screen overlay: scan the QR code posted at the venue (or type it in)
@@ -18,25 +27,53 @@ export function CheckInScanner({
   onVerified: () => void;
   onCancel: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [manualEntry, setManualEntry] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [scanLocked, setScanLocked] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const shake = useSharedValue(0);
 
   function checkCode(code: string) {
     if (code.trim().toUpperCase() === expectedCode.toUpperCase()) {
-      onVerified();
+      hapticSuccess();
+      setError(null);
+      setVerified(true);
+      setTimeout(onVerified, 650);
       return;
     }
+    hapticError();
     setError("That code doesn't match this ritual's venue. Try again.");
     setScanLocked(false);
+    shake.value = withSequence(
+      withTiming(-8, { duration: 45 }),
+      withTiming(8, { duration: 90 }),
+      withTiming(-6, { duration: 90 }),
+      withTiming(0, { duration: 60 })
+    );
   }
 
-  const showCamera = !manualEntry && permission?.granted;
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
+
+  const showCamera = !manualEntry && permission?.granted && !verified;
+
+  if (verified) {
+    return (
+      <View style={[styles.overlay, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
+        <Animated.View entering={ZoomIn.duration(400)} style={styles.successCircle}>
+          <Text style={styles.successMark}>✓</Text>
+        </Animated.View>
+        <Animated.Text entering={ZoomIn.delay(150).duration(300)} style={styles.successText}>
+          You're checked in!
+        </Animated.Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
       <Text style={styles.title}>Scan to check in</Text>
       <Text style={styles.subtitle}>Find the code posted at your venue.</Text>
 
@@ -48,7 +85,7 @@ export function CheckInScanner({
       )}
 
       {showCamera && (
-        <View style={styles.cameraBox}>
+        <Animated.View style={[styles.cameraBox, shakeStyle]}>
           <CameraView
             style={StyleSheet.absoluteFill}
             facing="back"
@@ -62,11 +99,11 @@ export function CheckInScanner({
                   }
             }
           />
-        </View>
+        </Animated.View>
       )}
 
       {manualEntry && (
-        <View style={styles.box}>
+        <Animated.View style={[styles.box, shakeStyle]}>
           <TextInput
             style={styles.input}
             placeholder="Venue code"
@@ -76,7 +113,7 @@ export function CheckInScanner({
             onChangeText={setManualCode}
           />
           <PrimaryButton title="Check in" onPress={() => checkCode(manualCode)} disabled={!manualCode.trim()} />
-        </View>
+        </Animated.View>
       )}
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -104,7 +141,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.background,
     padding: 24,
-    paddingTop: 72,
     alignItems: "center",
     gap: 16,
   },
@@ -133,4 +169,22 @@ const styles = StyleSheet.create({
   error: { color: colors.berry, textAlign: "center" },
   link: { color: colors.teal, fontWeight: "600" },
   cancel: { color: colors.muted, marginTop: 8 },
+  successCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.teal,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "auto",
+    marginBottom: 0,
+  },
+  successMark: { fontSize: 44, color: colors.surface, fontWeight: "700" },
+  successText: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    color: colors.ink,
+    marginTop: 20,
+    marginBottom: "auto",
+  },
 });

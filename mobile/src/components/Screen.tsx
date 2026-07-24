@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -70,11 +71,18 @@ export function Screen({
   children,
   style,
   accent = colors.berry,
+  edges = ["top", "bottom", "left", "right"],
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
   accent?: string;
+  /** Which safe-area edges to inset for. Screens that manage their own
+   * bottom spacing (e.g. a chat input bar that already sits above the home
+   * indicator) can drop "bottom" to avoid double-padding. */
+  edges?: Array<"top" | "bottom" | "left" | "right">;
 }) {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -89,7 +97,17 @@ export function Screen({
         drift={{ x: -20, y: -24 }}
         duration={11000}
       />
-      <View style={[styles.content, style]}>{children}</View>
+      <View
+        style={{
+          flex: 1,
+          paddingTop: edges.includes("top") ? insets.top : 0,
+          paddingBottom: edges.includes("bottom") ? insets.bottom : 0,
+          paddingLeft: edges.includes("left") ? insets.left : 0,
+          paddingRight: edges.includes("right") ? insets.right : 0,
+        }}
+      >
+        <View style={[styles.content, style]}>{children}</View>
+      </View>
     </View>
   );
 }

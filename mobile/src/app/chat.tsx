@@ -18,6 +18,7 @@ import { usePodMembership } from "@/lib/usePodMembership";
 import type { Message } from "@/lib/types";
 import { Screen } from "@/components/Screen";
 import { accentForRitual, colors, fonts } from "@/lib/theme";
+import { hapticTap } from "@/lib/haptics";
 
 export default function Chat() {
   const { session } = useAuth();
@@ -77,6 +78,7 @@ export default function Chat() {
   async function send() {
     const body = draft.trim();
     if (!body || !session || !podId) return;
+    hapticTap();
     setSending(true);
     setDraft("");
 
@@ -171,7 +173,7 @@ export default function Chat() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 56 },
+  container: { flex: 1, paddingTop: 12 },
   center: { alignItems: "center", justifyContent: "center", padding: 24 },
   header: {
     flexDirection: "row",

@@ -1,20 +1,24 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import Animated, { FadeInRight } from "react-native-reanimated";
+import Animated, { FadeInRight, FadeIn, ZoomIn } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthProvider";
 import { DAY_NAMES, formatTime } from "@/lib/dates";
 import { MAX_VIBE_TAGS, VIBE_TAGS, type Ritual } from "@/lib/types";
 import { Screen } from "@/components/Screen";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { accentForRitual, colors, fonts } from "@/lib/theme";
+import { hapticStep, hapticSuccess } from "@/lib/haptics";
 
 type Step = "city" | "ritualType" | "slot" | "vibeTags";
+const STEPS: Step[] = ["city", "ritualType", "slot", "vibeTags"];
 
 export default function Onboarding() {
   const { session, markOnboardingComplete } = useAuth();
   const [step, setStep] = useState<Step>("city");
+  const [joined, setJoined] = useState(false);
 
   const [city, setCity] = useState("");
   const [rituals, setRituals] = useState<Ritual[]>([]);
@@ -24,6 +28,11 @@ export default function Onboarding() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function goToStep(next: Step) {
+    hapticStep();
+    setStep(next);
+  }
 
   async function loadRitualsForCity() {
     setLoading(true);
@@ -43,7 +52,7 @@ export default function Onboarding() {
       return;
     }
     setRituals(data as unknown as Ritual[]);
-    setStep("ritualType");
+    goToStep("ritualType");
   }
 
   function toggleVibeTag(tag: string) {
@@ -80,16 +89,49 @@ export default function Onboarding() {
       return;
     }
 
-    markOnboardingComplete();
-    router.replace("/");
+    hapticSuccess();
+    setJoined(true);
+    setTimeout(() => {
+      markOnboardingComplete();
+      router.replace("/");
+    }, 1500);
   }
 
   const ritualTypes = [...new Set(rituals.map((r) => r.ritual_type))];
   const slots = rituals.filter((r) => r.ritual_type === selectedType);
   const accent = accentForRitual(selectedType ?? undefined);
 
+  if (joined) {
+    return (
+      <Screen accent={accent} style={styles.center}>
+        <ConfettiBurst />
+        <Animated.View entering={ZoomIn.duration(450)} style={styles.joinedCircle}>
+          <Text style={styles.joinedMark}>✓</Text>
+        </Animated.View>
+        <Animated.Text entering={FadeIn.delay(200).duration(400)} style={styles.joinedTitle}>
+          You're on the list!
+        </Animated.Text>
+        <Animated.Text entering={FadeIn.delay(350).duration(400)} style={styles.joinedSubtitle}>
+          We'll notify you the moment your pod forms.
+        </Animated.Text>
+      </Screen>
+    );
+  }
+
   return (
     <Screen accent={accent} style={styles.container}>
+      <View style={styles.progressRow}>
+        {STEPS.map((s, i) => (
+          <View
+            key={s}
+            style={[
+              styles.progressDot,
+              STEPS.indexOf(step) >= i && { backgroundColor: accent, width: 22 },
+            ]}
+          />
+        ))}
+      </View>
+
       {step === "city" && (
         <Animated.View key="city" entering={FadeInRight.duration(400)} style={styles.step}>
           <Text style={styles.title}>What city are you in?</Text>
@@ -116,16 +158,18 @@ export default function Onboarding() {
           <FlatList
             data={ritualTypes}
             keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <Pressable
-                style={[styles.optionRow, { borderColor: accentForRitual(item) }]}
-                onPress={() => {
-                  setSelectedType(item);
-                  setStep("slot");
-                }}
-              >
-                <Text style={[styles.optionText, { color: accentForRitual(item) }]}>{item}</Text>
-              </Pressable>
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInRight.delay(index * 60).duration(350)}>
+                <Pressable
+                  style={[styles.optionRow, { borderColor: accentForRitual(item) }]}
+                  onPress={() => {
+                    setSelectedType(item);
+                    goToStep("slot");
+                  }}
+                >
+                  <Text style={[styles.optionText, { color: accentForRitual(item) }]}>{item}</Text>
+                </Pressable>
+              </Animated.View>
             )}
           />
         </Animated.View>
@@ -137,21 +181,23 @@ export default function Onboarding() {
           <FlatList
             data={slots}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <Pressable
-                style={[styles.optionRow, { borderColor: accent }]}
-                onPress={() => {
-                  setSelectedRitualId(item.id);
-                  setStep("vibeTags");
-                }}
-              >
-                <Text style={styles.optionText}>
-                  {item.venues.name} · {DAY_NAMES[item.day_of_week]}s at {formatTime(item.start_time)}
-                </Text>
-              </Pressable>
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInRight.delay(index * 60).duration(350)}>
+                <Pressable
+                  style={[styles.optionRow, { borderColor: accent }]}
+                  onPress={() => {
+                    setSelectedRitualId(item.id);
+                    goToStep("vibeTags");
+                  }}
+                >
+                  <Text style={styles.optionText}>
+                    {item.venues.name} · {DAY_NAMES[item.day_of_week]}s at {formatTime(item.start_time)}
+                  </Text>
+                </Pressable>
+              </Animated.View>
             )}
           />
-          <Pressable onPress={() => setStep("ritualType")}>
+          <Pressable onPress={() => goToStep("ritualType")}>
             <Text style={styles.back}>← Back</Text>
           </Pressable>
         </Animated.View>
@@ -176,7 +222,7 @@ export default function Onboarding() {
           </View>
           {error && <Text style={styles.error}>{error}</Text>}
           <PrimaryButton title={loading ? "Joining…" : "I'm in"} onPress={finishOnboarding} disabled={loading} />
-          <Pressable onPress={() => setStep("slot")}>
+          <Pressable onPress={() => goToStep("slot")}>
             <Text style={styles.back}>← Back</Text>
           </Pressable>
         </Animated.View>
@@ -186,7 +232,15 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, paddingTop: 72 },
+  container: { padding: 24, paddingTop: 20 },
+  center: { alignItems: "center", justifyContent: "center", padding: 24 },
+  progressRow: { flexDirection: "row", gap: 6, marginBottom: 28 },
+  progressDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.border,
+  },
   step: { flex: 1, gap: 14 },
   title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginBottom: 6 },
   input: {
@@ -219,4 +273,15 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 14, color: colors.ink },
   tagTextSelected: { color: colors.surface, fontWeight: "600" },
+  joinedCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.teal,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  joinedMark: { fontSize: 46, color: colors.surface, fontWeight: "700" },
+  joinedTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginTop: 22 },
+  joinedSubtitle: { fontSize: 15, color: colors.muted, marginTop: 8, textAlign: "center" },
 });

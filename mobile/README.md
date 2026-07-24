@@ -112,6 +112,49 @@ spark burst when a streak milestone lands. Screen transitions and
 incoming chat messages use Reanimated's built-in `FadeIn*` entering
 animations rather than anything hand-rolled.
 
+## Mobile-native polish
+
+A pass to make the app feel like a real native app rather than a
+website in a phone-shaped window:
+
+- **Haptics** (`src/lib/haptics.ts`) — every `PrimaryButton` press, each
+  OTP digit entered, each onboarding step advance, a check-in
+  succeeding or failing, and sending a chat message all fire the
+  matching `expo-haptics` feedback (light impact, selection, success,
+  error). The helper no-ops on web and swallows any rejection, so it's
+  always safe to call and never something a screen has to `await`.
+- **Safe areas** — `Screen.tsx` now reads real device insets via
+  `useSafeAreaInsets()` (Expo Router already wraps the app in a
+  `SafeAreaProvider`, so this needed no extra provider) instead of
+  guessing a fixed top padding per screen. `CheckInScanner`, which
+  renders as its own full-screen overlay outside `Screen`, insets
+  itself the same way.
+- **Confetti** (`src/components/ConfettiBurst.tsx`) — a hand-rolled
+  Reanimated particle burst (no added native dependency), reused for
+  three moments: finishing onboarding, a live waiting → matched
+  transition on the pod home screen, and a streak milestone (layered
+  behind `StreakBadge`'s existing spark burst).
+- **OTP entry** (`verify.tsx`) — six auto-advancing digit boxes
+  instead of one text field: typing a digit jumps to the next box,
+  backspacing an empty box jumps back, pasting a full code fills every
+  box and submits immediately, and a wrong code shakes the row and
+  clears it instead of just showing red text.
+- **Pod home** (`index.tsx`) — pull-to-refresh (both the waiting state
+  and the matched state), a staggered fade-in for each pod member
+  instead of all appearing at once, and — the biggest one — detecting
+  a *live* `waiting` → `matched` transition (the weekly matcher ran, or
+  an admin manually formed a pod, while the screen happened to be
+  open) and taking over the screen with a full "You're in a pod!"
+  reveal + confetti for a couple of seconds before showing the normal
+  pod view. It deliberately only fires on an observed transition, never
+  on a pod that already existed before the screen mounted — reopening
+  the app to an already-formed pod shouldn't replay a celebration that
+  already happened.
+- **Check-in** (`CheckInScanner.tsx`) — a scanned or typed code that
+  matches now shows a brief animated checkmark instead of instantly
+  vanishing, so there's a visible confirmation moment before the
+  overlay closes and the check-in RPC fires.
+
 ## Notes
 
 - `app.json`'s `web.output` is set to `single` (SPA), not `static`.

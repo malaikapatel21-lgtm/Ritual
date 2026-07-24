@@ -2,6 +2,7 @@ import { Pressable, Text, StyleSheet, type StyleProp, type ViewStyle } from "rea
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { colors, gradients } from "@/lib/theme";
+import { hapticTap } from "@/lib/haptics";
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -28,7 +29,10 @@ export function PrimaryButton({
     <Pressable
       disabled={disabled}
       onPress={onPress}
-      onPressIn={() => (scale.value = withTiming(0.96, { duration: 100 }))}
+      onPressIn={() => {
+        scale.value = withTiming(0.96, { duration: 100 });
+        hapticTap();
+      }}
       onPressOut={() => (scale.value = withTiming(1, { duration: 150 }))}
       style={style}
     >
