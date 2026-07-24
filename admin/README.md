@@ -60,6 +60,14 @@ and sees everything.
   start now" is exactly the override this tool exists for.
   `max_pod_size` is still enforced, as a sanity bound.
 
+## Design
+
+Same dark, candlelit family as the venue dashboard (deep ink
+background, Bodoni Moda/Newsreader fonts, the same accent palette),
+gold-forward instead of teal to mark this as the founder's tool rather
+than a venue owner's — the two ops surfaces are visually related but
+not identical.
+
 ## Deliberately out of scope
 
 Linking a venue to its owner (the `venue_owners` table the venue

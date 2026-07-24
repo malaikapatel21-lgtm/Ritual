@@ -32,6 +32,14 @@ No pods are formed here — that's `matchPods`, in Phase 1.
 - Tapping "I'm in" inserts a row into `ritual_signups` with the
   default `status = 'waiting'`. That's it — no matching happens yet.
 
+## Design
+
+Same visual language as the mobile app — Bodoni Moda for headlines,
+Newsreader for body copy, the same jewel-tone accent palette, and a
+warm ivory gradient with drifting color blobs (pure CSS, no JS) so
+someone's very first touchpoint with the product already looks like
+the app they'll eventually download.
+
 ## Reading the result
 
 Watch `ritual_signup_counts()` (or just query `ritual_signups`

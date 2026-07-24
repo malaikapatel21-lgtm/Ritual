@@ -1,111 +1,232 @@
 :root {
-  color-scheme: light dark;
-  --fg: #1a1a1a;
-  --bg: #fafafa;
-  --card: #ffffff;
-  --border: #e2e2e2;
-  --accent: #2f6f4f;
-  --muted: #6b6b6b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fg: #f0f0f0;
-    --bg: #121212;
-    --card: #1c1c1c;
-    --border: #333333;
-    --accent: #6fcf97;
-    --muted: #9a9a9a;
-  }
+  --ink: #1B1611;
+  --bg: #FAF6F0;
+  --bg-deep: #F1E9DE;
+  --card: #FFFFFF;
+  --border: #E8DFD3;
+  --muted: #8A7F72;
+  --berry: #B0335C;
+  --gold: #C9A24B;
+  --teal: #2E6E62;
+  --terracotta: #C1652F;
 }
 
 * { box-sizing: border-box; }
 
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(28px, 36px); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-24px, -30px); }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: var(--fg);
-  background: var(--bg);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 16px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg), var(--bg-deep));
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0.18;
+}
+
+.blob-a {
+  width: 340px;
+  height: 340px;
+  top: -110px;
+  right: -90px;
+  background: var(--berry);
+  animation: drift-a 10s ease-in-out infinite;
+}
+
+.blob-b {
+  width: 280px;
+  height: 280px;
+  bottom: -90px;
+  left: -80px;
+  background: var(--gold);
+  animation: drift-b 12s ease-in-out infinite;
 }
 
 .wrap {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
+  padding: 3rem 1.5rem 4rem;
 }
 
-h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-.tagline { color: var(--muted); margin-top: 0; }
+header { margin-bottom: 2rem; }
 
-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.kicker {
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--terracotta);
+  letter-spacing: 0.03em;
+  margin: 0 0 0.6rem;
+  opacity: 0;
+  animation: rise-in 0.6s ease-out 0.05s forwards;
+}
 
-label { font-size: 0.85rem; color: var(--muted); }
+h1 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-weight: 700;
+  font-size: 2.6rem;
+  line-height: 1.05;
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+  opacity: 0;
+  animation: rise-in 0.65s ease-out 0.15s forwards;
+}
+
+.tagline {
+  font-style: italic;
+  color: var(--muted);
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  opacity: 0;
+  animation: rise-in 0.65s ease-out 0.28s forwards;
+}
+
+section#signin-view,
+section#app-view {
+  opacity: 0;
+  animation: rise-in 0.65s ease-out 0.4s forwards;
+}
+
+form { display: flex; flex-direction: column; gap: 0.85rem; }
+
+label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 
 input[type="email"] {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
   background: var(--card);
-  color: var(--fg);
-  font-size: 1rem;
+  color: var(--ink);
+  font-family: "Newsreader", serif;
+  font-size: 1.05rem;
+  transition: border-color 0.2s ease;
+}
+
+input[type="email"]:focus {
+  outline: none;
+  border-color: var(--berry);
 }
 
 button {
-  padding: 0.65rem 1rem;
+  padding: 0.85rem 1.25rem;
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #08160f;
+  border-radius: 12px;
+  background: linear-gradient(120deg, var(--berry), var(--terracotta));
+  color: #FBF3EA;
+  font-family: "Newsreader", serif;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px -10px rgba(176, 51, 92, 0.55);
 }
 
-button:disabled { opacity: 0.6; cursor: default; }
+button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(176, 51, 92, 0.6); }
+button:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+button:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
 
-.status { color: var(--muted); font-size: 0.9rem; }
+.status { color: var(--muted); font-size: 0.92rem; font-style: italic; }
 
 .ritual-list {
   list-style: none;
-  margin: 1.5rem 0 0;
+  margin: 1.75rem 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.9rem;
 }
 
 .ritual-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 16px;
+  padding: 1.15rem 1.25rem;
   background: var(--card);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  opacity: 0;
+  animation: rise-in 0.5s ease-out forwards;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
+.ritual-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+
+.ritual-list li:nth-child(1) { animation-delay: 0.05s; }
+.ritual-list li:nth-child(2) { animation-delay: 0.12s; }
+.ritual-list li:nth-child(3) { animation-delay: 0.19s; }
+.ritual-list li:nth-child(4) { animation-delay: 0.26s; }
+.ritual-list li:nth-child(n+5) { animation-delay: 0.33s; }
+
 .ritual-card .details h3 {
-  margin: 0 0 0.15rem;
-  font-size: 1.05rem;
+  margin: 0 0 0.2rem;
+  font-family: "Bodoni Moda", serif;
+  font-weight: 700;
+  font-size: 1.2rem;
   text-transform: capitalize;
 }
 
 .ritual-card .details p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
 .ritual-card .count {
-  font-size: 0.8rem;
-  color: var(--accent);
+  font-size: 0.82rem;
+  color: var(--teal);
   font-weight: 600;
-  margin-top: 0.25rem;
+  font-style: italic;
+  margin-top: 0.3rem;
 }
 
 .ritual-card button.joined {
   background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--teal);
+  border: 1.5px solid var(--teal);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none; }
+  h1, .kicker, .tagline, section#signin-view, section#app-view, .ritual-card {
+    animation: none;
+    opacity: 1;
+  }
 }
