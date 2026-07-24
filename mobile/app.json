@@ -33,7 +33,13 @@
           "imageWidth": 76
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ritual Pods uses the camera to scan the check-in code at your venue."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

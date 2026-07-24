@@ -47,10 +47,24 @@ create table if not exists public.rituals (
   start_time time not null,
   min_pod_size smallint not null default 4,
   max_pod_size smallint not null default 8,
+  -- Printed as a QR code (or handed out as a short code) at the venue.
+  -- Scanning/entering it proves you're physically there before check-in
+  -- is allowed — not cryptographic security, just a step up from a bare
+  -- "I was there" tap.
+  check_in_code text not null default upper(substr(md5(random()::text), 1, 6)),
   created_at timestamptz not null default now()
 );
 
 create index if not exists rituals_venue_id_idx on public.rituals (venue_id);
+
+-- Safe to re-run against a project that already has rituals from before
+-- check_in_code existed.
+alter table public.rituals add column if not exists check_in_code text;
+update public.rituals set check_in_code = upper(substr(md5(random()::text || id::text), 1, 6))
+  where check_in_code is null;
+alter table public.rituals alter column check_in_code set default upper(substr(md5(random()::text), 1, 6));
+alter table public.rituals alter column check_in_code set not null;
+create unique index if not exists rituals_check_in_code_idx on public.rituals (check_in_code);
 
 -- ------------------------------------------------------------
 -- ritual_signups — a user's request to join a ritual, waiting to

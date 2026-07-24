@@ -72,7 +72,14 @@ User signs up for a ritual
   streak milestones.
 
 **Phase 3 — polish + defensibility**
-- Swap manual check-in for geofenced or QR/venue-code check-in.
+- Manual check-in has been swapped for venue-code check-in: each
+  ritual has a `check_in_code` (`schema.sql`), printed as a QR code
+  (or a hand-written sign) at the venue, and the app scans it — or
+  takes a typed fallback — before calling `handle_checkin`. Not
+  cryptographic security, just a step up from a bare "I was there"
+  tap; geofencing was the other option in the original plan but pulls
+  in background-location permissions and App Store review overhead
+  this doesn't need.
 - Matching now has an AI-assisted layer (Claude groups by vibe-tag
   compatibility) on top of the original deterministic bucketing,
   which stays as the fallback. The original plan's caveat still

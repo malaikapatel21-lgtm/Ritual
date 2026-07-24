@@ -35,6 +35,7 @@ export interface RitualInfo {
   ritual_type: string;
   day_of_week: number;
   start_time: string;
+  check_in_code: string;
   venues: { name: string };
 }
 

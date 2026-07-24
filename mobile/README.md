@@ -1,9 +1,9 @@
 # Ritual Pods — mobile app
 
-Expo (React Native) app for Phase 1's core loop: onboarding into a
-ritual, a pod home screen, and manual check-in. Talks directly to the
-same Supabase project as `../schema.sql`, `../supabase/functions/matchPods`,
-and `../streak_update.sql`.
+Expo (React Native) app for the core loop: onboarding into a ritual, a
+pod home screen, chat, push notifications, and venue-code check-in.
+Talks directly to the same Supabase project as `../schema.sql`,
+`../supabase/functions/matchPods`, and `../streak_update.sql`.
 
 ## Setup
 
@@ -42,8 +42,9 @@ File-based routing via Expo Router, with routes gated centrally in
   shows a "you're on the list" state while `ritual_signups.status`
   is `waiting`, and once `matchPods` runs and flips it to `matched`,
   shows the pod roster, streak count, next session, an "I'm here"
-  button (enabled only on the ritual's session day) that calls the
-  `handle_checkin` RPC, and a link into `chat.tsx`.
+  button (enabled only on the ritual's session day) that opens the
+  check-in scanner and, once verified, calls the `handle_checkin`
+  RPC, plus a link into `chat.tsx`.
 
 `src/lib/AuthProvider.tsx` holds the Supabase session and an
 `onboardingComplete` flag (derived from whether any `ritual_signups`
@@ -80,6 +81,20 @@ once a session exists. Three notifications flow through this:
   *caller's own* devices (it reads the target user from the caller's
   JWT, never from the request body — a client can't push-notify anyone
   else).
+
+## Venue-code check-in
+
+Tapping "I'm here" opens `src/components/CheckInScanner.tsx` instead of
+checking in directly: a full-screen `expo-camera` `CameraView` scanning
+for the QR code posted at the venue (with a "enter it manually" text
+fallback for when there's no camera access or no physical sign yet).
+The scanned/typed value is compared against that ritual's
+`check_in_code` (`schema.sql`) before `index.tsx` calls
+`handle_checkin` — this is a physical-presence proxy, not
+cryptographic security, since `rituals` has no RLS and the code is
+readable by the app the same as any other ritual field. `web/seed.sql`
+has demo codes (`SAUNA1`, `WALK01`, etc.) for the seeded rituals so
+the flow is testable without printing anything.
 
 ## Design system
 

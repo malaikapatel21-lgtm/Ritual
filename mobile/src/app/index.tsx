@@ -10,6 +10,7 @@ import { isStreakMilestone, notifyStreakMilestone } from "@/lib/streakMilestones
 import { Screen } from "@/components/Screen";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { StreakBadge } from "@/components/StreakBadge";
+import { CheckInScanner } from "@/components/CheckInScanner";
 import { accentForRitual, colors, fonts } from "@/lib/theme";
 
 export default function PodHome() {
@@ -17,6 +18,7 @@ export default function PodHome() {
   const { loading, status, ritual, podId, members, streak, checkedInToday, refresh } = usePodMembership();
   const [checkingIn, setCheckingIn] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   async function checkIn() {
     if (!session || !podId) return;
@@ -124,7 +126,7 @@ export default function PodHome() {
                   : "I'm here"
                 : "Check-in opens on session day"
           }
-          onPress={checkIn}
+          onPress={() => setShowScanner(true)}
           disabled={!sessionIsToday || checkedInToday || checkingIn}
           style={styles.checkInButton}
         />
@@ -133,6 +135,17 @@ export default function PodHome() {
           <Text style={styles.signOut}>Sign out</Text>
         </Pressable>
       </Animated.View>
+
+      {showScanner && (
+        <CheckInScanner
+          expectedCode={ritual.check_in_code}
+          onVerified={() => {
+            setShowScanner(false);
+            checkIn();
+          }}
+          onCancel={() => setShowScanner(false)}
+        />
+      )}
     </Screen>
   );
 }
