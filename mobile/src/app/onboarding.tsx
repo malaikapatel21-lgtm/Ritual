@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import Animated, { FadeInRight } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthProvider";
 import { DAY_NAMES, formatTime } from "@/lib/dates";
 import { MAX_VIBE_TAGS, VIBE_TAGS, type Ritual } from "@/lib/types";
+import { Screen } from "@/components/Screen";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { accentForRitual, colors, fonts } from "@/lib/theme";
 
 type Step = "city" | "ritualType" | "slot" | "vibeTags";
 
@@ -82,60 +86,60 @@ export default function Onboarding() {
 
   const ritualTypes = [...new Set(rituals.map((r) => r.ritual_type))];
   const slots = rituals.filter((r) => r.ritual_type === selectedType);
+  const accent = accentForRitual(selectedType ?? undefined);
 
   return (
-    <View style={styles.container}>
+    <Screen accent={accent} style={styles.container}>
       {step === "city" && (
-        <View style={styles.step}>
+        <Animated.View key="city" entering={FadeInRight.duration(400)} style={styles.step}>
           <Text style={styles.title}>What city are you in?</Text>
           <TextInput
             style={styles.input}
             placeholder="Seattle"
+            placeholderTextColor={colors.muted}
             value={city}
             onChangeText={setCity}
             autoCapitalize="words"
           />
           {error && <Text style={styles.error}>{error}</Text>}
-          <Pressable
-            style={[styles.button, (!city.trim() || loading) && styles.buttonDisabled]}
-            disabled={!city.trim() || loading}
+          <PrimaryButton
+            title={loading ? "Looking…" : "Next"}
             onPress={loadRitualsForCity}
-          >
-            <Text style={styles.buttonText}>{loading ? "Looking…" : "Next"}</Text>
-          </Pressable>
-        </View>
+            disabled={!city.trim() || loading}
+          />
+        </Animated.View>
       )}
 
       {step === "ritualType" && (
-        <View style={styles.step}>
+        <Animated.View key="ritualType" entering={FadeInRight.duration(400)} style={styles.step}>
           <Text style={styles.title}>Pick a ritual</Text>
           <FlatList
             data={ritualTypes}
             keyExtractor={(item) => item}
             renderItem={({ item }) => (
               <Pressable
-                style={styles.optionRow}
+                style={[styles.optionRow, { borderColor: accentForRitual(item) }]}
                 onPress={() => {
                   setSelectedType(item);
                   setStep("slot");
                 }}
               >
-                <Text style={styles.optionText}>{item}</Text>
+                <Text style={[styles.optionText, { color: accentForRitual(item) }]}>{item}</Text>
               </Pressable>
             )}
           />
-        </View>
+        </Animated.View>
       )}
 
       {step === "slot" && (
-        <View style={styles.step}>
+        <Animated.View key="slot" entering={FadeInRight.duration(400)} style={styles.step}>
           <Text style={styles.title}>Pick a time</Text>
           <FlatList
             data={slots}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <Pressable
-                style={styles.optionRow}
+                style={[styles.optionRow, { borderColor: accent }]}
                 onPress={() => {
                   setSelectedRitualId(item.id);
                   setStep("vibeTags");
@@ -150,11 +154,11 @@ export default function Onboarding() {
           <Pressable onPress={() => setStep("ritualType")}>
             <Text style={styles.back}>← Back</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       )}
 
       {step === "vibeTags" && (
-        <View style={styles.step}>
+        <Animated.View key="vibeTags" entering={FadeInRight.duration(400)} style={styles.step}>
           <Text style={styles.title}>Pick up to {MAX_VIBE_TAGS} vibes</Text>
           <View style={styles.tagWrap}>
             {VIBE_TAGS.map((tag) => {
@@ -162,7 +166,7 @@ export default function Onboarding() {
               return (
                 <Pressable
                   key={tag}
-                  style={[styles.tag, selected && styles.tagSelected]}
+                  style={[styles.tag, selected && { backgroundColor: accent, borderColor: accent }]}
                   onPress={() => toggleVibeTag(tag)}
                 >
                   <Text style={[styles.tagText, selected && styles.tagTextSelected]}>{tag}</Text>
@@ -171,61 +175,48 @@ export default function Onboarding() {
             })}
           </View>
           {error && <Text style={styles.error}>{error}</Text>}
-          <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
-            disabled={loading}
-            onPress={finishOnboarding}
-          >
-            <Text style={styles.buttonText}>{loading ? "Joining…" : "I'm in"}</Text>
-          </Pressable>
+          <PrimaryButton title={loading ? "Joining…" : "I'm in"} onPress={finishOnboarding} disabled={loading} />
           <Pressable onPress={() => setStep("slot")}>
             <Text style={styles.back}>← Back</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       )}
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, paddingTop: 64 },
-  step: { flex: 1, gap: 12 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
+  container: { padding: 24, paddingTop: 72 },
+  step: { flex: 1, gap: 14 },
+  title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 14,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 15,
     fontSize: 16,
+    backgroundColor: colors.surface,
+    color: colors.ink,
   },
-  button: {
-    backgroundColor: "#2f6f4f",
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  error: { color: "#c0392b" },
+  error: { color: colors.berry },
   optionRow: {
     padding: 16,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderWidth: 1.5,
+    borderRadius: 14,
     marginBottom: 8,
+    backgroundColor: colors.surface,
   },
-  optionText: { fontSize: 16, textTransform: "capitalize" },
-  back: { color: "#666", marginTop: 8 },
+  optionText: { fontSize: 16, textTransform: "capitalize", color: colors.ink, fontWeight: "600" },
+  back: { color: colors.muted, marginTop: 8 },
   tagWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   tag: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 14,
+    backgroundColor: colors.surface,
   },
-  tagSelected: { backgroundColor: "#2f6f4f", borderColor: "#2f6f4f" },
-  tagText: { fontSize: 14 },
-  tagTextSelected: { color: "#fff" },
+  tagText: { fontSize: 14, color: colors.ink },
+  tagTextSelected: { color: colors.surface, fontWeight: "600" },
 });

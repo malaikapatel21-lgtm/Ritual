@@ -15,8 +15,13 @@ create table if not exists public.profiles (
   full_name text,
   city text not null,
   vibe_tags text[] not null default '{}',
+  push_token text,
   created_at timestamptz not null default now()
 );
+
+-- Safe to re-run against a project that already has profiles from before
+-- push_token existed.
+alter table public.profiles add column if not exists push_token text;
 
 -- ------------------------------------------------------------
 -- venues — real-world locations rituals are anchored to

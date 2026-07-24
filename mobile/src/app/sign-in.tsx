@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
+import { Screen } from "@/components/Screen";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { colors, fonts } from "@/lib/theme";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -22,52 +26,49 @@ export default function SignIn() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Ritual Pods</Text>
-      <Text style={styles.subtitle}>Enter your email and we'll send you a sign-in code.</Text>
+    <Screen accent={colors.berry} style={styles.container}>
+      <Animated.View entering={FadeInDown.duration(600)}>
+        <Text style={styles.title}>Ritual Pods</Text>
+        <Text style={styles.subtitle}>Enter your email and we'll send you a sign-in code.</Text>
+      </Animated.View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="you@example.com"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        autoComplete="email"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <Animated.View entering={FadeInUp.delay(150).duration(600)} style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="you@example.com"
+          placeholderTextColor={colors.muted}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoComplete="email"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      {error && <Text style={styles.error}>{error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
-      <Pressable
-        style={[styles.button, (sending || !email) && styles.buttonDisabled]}
-        disabled={sending || !email}
-        onPress={sendCode}
-      >
-        <Text style={styles.buttonText}>{sending ? "Sending…" : "Send code"}</Text>
-      </Pressable>
-    </View>
+        <PrimaryButton
+          title={sending ? "Sending…" : "Send code"}
+          onPress={sendCode}
+          disabled={sending || !email}
+        />
+      </Animated.View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 24, gap: 12 },
-  title: { fontSize: 28, fontWeight: "700" },
-  subtitle: { fontSize: 15, color: "#666", marginBottom: 12 },
+  container: { justifyContent: "center", padding: 28, gap: 28 },
+  title: { fontFamily: fonts.display, fontSize: 40, color: colors.ink },
+  subtitle: { fontFamily: fonts.displayItalic, fontSize: 17, color: colors.muted, marginTop: 6 },
+  form: { gap: 14 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 14,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 15,
     fontSize: 16,
+    backgroundColor: colors.surface,
+    color: colors.ink,
   },
-  button: {
-    backgroundColor: "#2f6f4f",
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  error: { color: "#c0392b" },
+  error: { color: colors.berry },
 });

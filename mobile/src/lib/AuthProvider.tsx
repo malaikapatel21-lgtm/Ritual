@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { registerPushToken } from "@/lib/registerPushToken";
 
 interface AuthContextValue {
   session: Session | null;
@@ -22,6 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       if (data.session) {
         await checkOnboardingComplete(data.session.user.id);
+        registerPushToken(data.session.user.id).catch((error) =>
+          console.warn("Push token registration failed", error)
+        );
       }
       setLoading(false);
     });
@@ -30,6 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       if (newSession) {
         await checkOnboardingComplete(newSession.user.id);
+        registerPushToken(newSession.user.id).catch((error) =>
+          console.warn("Push token registration failed", error)
+        );
       } else {
         setOnboardingComplete(false);
       }

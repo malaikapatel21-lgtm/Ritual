@@ -12,7 +12,10 @@ interface PodMembership {
   members: PodMemberProfile[];
   streak: Streak | null;
   checkedInToday: boolean;
-  refresh: () => Promise<void>;
+  /** Re-fetches everything and returns the freshly-loaded streak (or null),
+   * so callers that need the authoritative post-refresh value (e.g. to
+   * detect a milestone) don't have to guess at it from stale closure state. */
+  refresh: () => Promise<Streak | null>;
 }
 
 /** Looks up the signed-in user's latest ritual signup and, once matched, their pod. */
@@ -26,8 +29,8 @@ export function usePodMembership(): PodMembership {
   const [streak, setStreak] = useState<Streak | null>(null);
   const [checkedInToday, setCheckedInToday] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!session) return;
+  const load = useCallback(async (): Promise<Streak | null> => {
+    if (!session) return null;
     setLoading(true);
 
     const { data: signup } = await supabase
@@ -40,12 +43,14 @@ export function usePodMembership(): PodMembership {
 
     if (!signup) {
       setLoading(false);
-      return;
+      return null;
     }
 
     const ritualInfo = signup.rituals as unknown as RitualInfo;
     setStatus(signup.status as SignupStatus);
     setRitual(ritualInfo);
+
+    let freshStreak: Streak | null = null;
 
     if (signup.status === "matched" && ritualInfo) {
       const { data: membership } = await supabase
@@ -83,12 +88,14 @@ export function usePodMembership(): PodMembership {
             full_name: (row.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
           }))
         );
-        setStreak(streakRow ?? { current_streak: 0, longest_streak: 0, last_session_date: null });
+        freshStreak = streakRow ?? { current_streak: 0, longest_streak: 0, last_session_date: null };
+        setStreak(freshStreak);
         setCheckedInToday(attendanceRow?.checked_in ?? false);
       }
     }
 
     setLoading(false);
+    return freshStreak;
   }, [session]);
 
   useEffect(() => {

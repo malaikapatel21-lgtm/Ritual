@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { Text, TextInput, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
+import { Screen } from "@/components/Screen";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { colors, fonts } from "@/lib/theme";
 
 export default function Verify() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -27,52 +31,50 @@ export default function Verify() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Check your email</Text>
-      <Text style={styles.subtitle}>Enter the code we sent to {email}.</Text>
+    <Screen accent={colors.gold} style={styles.container}>
+      <Animated.View entering={FadeInDown.duration(600)}>
+        <Text style={styles.title}>Check your email</Text>
+        <Text style={styles.subtitle}>Enter the code we sent to {email}.</Text>
+      </Animated.View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="123456"
-        keyboardType="number-pad"
-        maxLength={6}
-        value={code}
-        onChangeText={setCode}
-      />
+      <Animated.View entering={FadeInUp.delay(150).duration(600)} style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="123456"
+          placeholderTextColor={colors.muted}
+          keyboardType="number-pad"
+          maxLength={6}
+          value={code}
+          onChangeText={setCode}
+        />
 
-      {error && <Text style={styles.error}>{error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
-      <Pressable
-        style={[styles.button, (verifying || code.length < 6) && styles.buttonDisabled]}
-        disabled={verifying || code.length < 6}
-        onPress={verify}
-      >
-        <Text style={styles.buttonText}>{verifying ? "Verifying…" : "Verify"}</Text>
-      </Pressable>
-    </View>
+        <PrimaryButton
+          title={verifying ? "Verifying…" : "Verify"}
+          onPress={verify}
+          disabled={verifying || code.length < 6}
+          variant="gold"
+        />
+      </Animated.View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 24, gap: 12 },
-  title: { fontSize: 28, fontWeight: "700" },
-  subtitle: { fontSize: 15, color: "#666", marginBottom: 12 },
+  container: { justifyContent: "center", padding: 28, gap: 28 },
+  title: { fontFamily: fonts.display, fontSize: 32, color: colors.ink },
+  subtitle: { fontFamily: fonts.displayItalic, fontSize: 16, color: colors.muted, marginTop: 6 },
+  form: { gap: 14 },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    letterSpacing: 4,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 15,
+    fontSize: 18,
+    letterSpacing: 6,
+    backgroundColor: colors.surface,
+    color: colors.ink,
   },
-  button: {
-    backgroundColor: "#2f6f4f",
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  error: { color: "#c0392b" },
+  error: { color: colors.berry },
 });

@@ -13,10 +13,16 @@ to show up; community is the retention engine.
 2. **`supabase/functions/matchPods/index.ts`** — deploy as a
    Supabase Edge Function. This is the weekly cron job: it reads
    everyone who signed up but hasn't been matched
-   (`ritual_signups.status = 'waiting'`), buckets them into pods of
-   up to 8, and refuses to launch a pod below the minimum viable
+   (`ritual_signups.status = 'waiting'`), and groups them into pods
+   of up to 8, refusing to launch a pod below the minimum viable
    size (default 4) — that's the guardrail against a pod that feels
-   empty on day one.
+   empty on day one. When `ANTHROPIC_API_KEY` is configured, Claude
+   proposes the grouping (optimizing for shared vibe tags); its
+   proposal is validated before use, and a missing key, an API
+   error, or an invalid proposal falls back to plain deterministic
+   bucketing, which never fails to produce valid pods. The
+   guarantee comes first; the AI grouping is a quality layer on top
+   of it, never a replacement for it.
 
 3. **`streak_update.sql`** — run once alongside the schema. Your
    app calls `handle_checkin(pod_id, user_id, session_date)` via
@@ -62,12 +68,18 @@ User signs up for a ritual
 
 **Phase 2 — retention layer**
 - Pod chat using Supabase Realtime on the `messages` table.
-- Push notifications (Expo) for session reminders and streak milestones.
+- Push notifications (Expo) for pod-formed, session reminders, and
+  streak milestones.
 
 **Phase 3 — polish + defensibility**
 - Swap manual check-in for geofenced or QR/venue-code check-in.
-- Refine matching with vibe tags (still rules-based, not ML — you
-  don't have enough data for ML to help at this stage).
+- Matching now has an AI-assisted layer (Claude groups by vibe-tag
+  compatibility) on top of the original deterministic bucketing,
+  which stays as the fallback. The original plan's caveat still
+  applies in spirit: with only a handful of vibe tags per person and
+  no attendance history yet, there's a low ceiling on how much
+  better the AI grouping can actually do over even bucketing — watch
+  real pod outcomes before leaning on it further.
 - Venue partner dashboard (this is where it can merge with the
   "venue-side layer" idea from earlier if you want a second revenue line).
 
@@ -80,16 +92,30 @@ User signs up for a ritual
 
 ## What's built so far
 
-- `schema.sql`, `streak_update.sql`, `supabase/functions/matchPods` —
-  the full backend: tables, RLS, the weekly matcher, and the
+- `schema.sql`, `streak_update.sql` — tables, RLS, and the
   check-in/streak RPC.
+- `supabase/functions/matchPods` — the weekly matcher, now with an
+  AI-assisted grouping pass (Claude via the official TypeScript SDK)
+  that falls back to deterministic bucketing on any error or invalid
+  proposal, plus a "you're in a pod!" push to every newly matched
+  member.
+- `supabase/functions/sendSessionReminders` — a daily job that pushes
+  a reminder to every pod whose ritual falls tomorrow.
+- `supabase/functions/sendPush` — a self-serve endpoint the mobile
+  app calls to push-notify the *signed-in user's own* devices (used
+  for streak-milestone celebrations); it never accepts a target
+  user_id, so a client can only ever notify itself.
+- `supabase/functions/_shared/expoPush.ts` — shared helper the three
+  functions above use to actually send through Expo's push API.
 - `web/` — a Phase 0 signup page for validating demand in a single
   neighborhood before building the full app.
 - `mobile/` — the Phase 1 Expo app: magic-code sign-in, the
-  onboarding wizard, and the pod home screen with check-in, plus
-  Phase 2's pod chat (Supabase Realtime on `messages`). See
-  `mobile/README.md` for setup. Push notifications are the other
-  Phase 2 piece and aren't built yet.
+  onboarding wizard, and the pod home screen with check-in; Phase
+  2's pod chat (Supabase Realtime on `messages`) and push
+  notifications (pod-formed, session reminders, streak milestones);
+  and an editorial visual redesign (Bodoni Moda display serif,
+  vibe-tag-colorful palette, animated backgrounds and streak
+  celebrations). See `mobile/README.md` for setup.
 
 ## The one number that matters before you monetize
 
@@ -106,10 +132,17 @@ that first.
 psql "$DATABASE_URL" -f schema.sql
 psql "$DATABASE_URL" -f streak_update.sql
 
-# 2. Deploy the weekly matching job.
+# 2. Set the AI-matching key (optional — matchPods falls back to
+#    deterministic bucketing without it) and deploy the three functions.
+#    _shared is not deployed as its own function; each function imports
+#    it via a relative path.
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase functions deploy matchPods
+supabase functions deploy sendSessionReminders
+supabase functions deploy sendPush
 
-# 3. Schedule it (pg_cron example — Sunday 9pm UTC).
+# 3. Schedule matchPods weekly (Sunday 9pm UTC) and
+#    sendSessionReminders daily (9am UTC) via pg_cron.
 select cron.schedule(
   'weekly-pod-matching',
   '0 21 * * 0',
@@ -122,4 +155,21 @@ select cron.schedule(
   );
   $$
 );
+
+select cron.schedule(
+  'daily-session-reminders',
+  '0 9 * * *',
+  $$
+  select net.http_post(
+    url := 'https://<project-ref>.functions.supabase.co/sendSessionReminders',
+    headers := jsonb_build_object(
+      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+    )
+  );
+  $$
+);
 ```
+
+`sendPush` isn't scheduled — it's called directly by the mobile app
+(with the signed-in user's own JWT) whenever a streak milestone is
+hit.

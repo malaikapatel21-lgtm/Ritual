@@ -11,10 +11,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthProvider";
 import { usePodMembership } from "@/lib/usePodMembership";
 import type { Message } from "@/lib/types";
+import { Screen } from "@/components/Screen";
+import { accentForRitual, colors, fonts } from "@/lib/theme";
 
 export default function Chat() {
   const { session } = useAuth();
@@ -24,6 +27,8 @@ export default function Chat() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
+
+  const accent = accentForRitual(ritual?.ritual_type);
 
   const nameFor = (userId: string) => {
     if (userId === session?.user.id) return "You";
@@ -92,71 +97,82 @@ export default function Chat() {
 
   if (membershipLoading || loadingMessages) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-      </View>
+      <Screen style={styles.center}>
+        <ActivityIndicator color={colors.berry} />
+      </Screen>
     );
   }
 
   if (status !== "matched" || !podId) {
     return (
-      <View style={styles.center}>
+      <Screen style={styles.center}>
         <Text style={styles.subtitle}>Chat opens once you're matched into a pod.</Text>
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={64}
-    >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </Pressable>
-        <Text style={styles.title}>{ritual?.ritual_type} pod</Text>
-      </View>
+    <Screen accent={accent}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={64}
+      >
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()}>
+            <Text style={[styles.back, { color: accent }]}>← Back</Text>
+          </Pressable>
+          <Text style={styles.title}>{ritual?.ritual_type} pod</Text>
+        </View>
 
-      <FlatList
-        ref={listRef}
-        style={styles.list}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-        renderItem={({ item }) => (
-          <View style={styles.messageRow}>
-            <Text style={styles.sender}>{nameFor(item.user_id)}</Text>
-            <Text style={styles.messageBody}>{item.body}</Text>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={styles.subtitle}>No messages yet — say hi!</Text>}
-      />
-
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Message your pod…"
-          value={draft}
-          onChangeText={setDraft}
-          multiline
+        <FlatList
+          ref={listRef}
+          style={styles.list}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          renderItem={({ item }) => {
+            const isMe = item.user_id === session?.user.id;
+            return (
+              <Animated.View
+                entering={FadeInUp.duration(300)}
+                style={[styles.messageRow, isMe && styles.messageRowMine]}
+              >
+                <View style={[styles.bubble, isMe ? { backgroundColor: accent } : styles.bubbleTheirs]}>
+                  {!isMe && <Text style={styles.sender}>{nameFor(item.user_id)}</Text>}
+                  <Text style={[styles.messageBody, isMe && styles.messageBodyMine]}>{item.body}</Text>
+                </View>
+              </Animated.View>
+            );
+          }}
+          ListEmptyComponent={<Text style={styles.subtitle}>No messages yet — say hi!</Text>}
         />
-        <Pressable
-          style={[styles.sendButton, (!draft.trim() || sending) && styles.sendButtonDisabled]}
-          disabled={!draft.trim() || sending}
-          onPress={send}
-        >
-          <Text style={styles.sendButtonText}>Send</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Message your pod…"
+            placeholderTextColor={colors.muted}
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+          />
+          <Pressable
+            style={[styles.sendButton, { backgroundColor: accent }, (!draft.trim() || sending) && styles.sendButtonDisabled]}
+            disabled={!draft.trim() || sending}
+            onPress={send}
+          >
+            <Text style={styles.sendButtonText}>Send</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 56 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  center: { alignItems: "center", justifyContent: "center", padding: 24 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -164,36 +180,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  back: { color: "#666", fontSize: 15 },
-  title: { fontSize: 18, fontWeight: "700", textTransform: "capitalize" },
-  subtitle: { fontSize: 15, color: "#666", textAlign: "center", marginTop: 24 },
+  back: { fontSize: 15, fontWeight: "700" },
+  title: { fontFamily: fonts.displaySemibold, fontSize: 20, color: colors.ink, textTransform: "capitalize" },
+  subtitle: { fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 24 },
   list: { flex: 1, paddingHorizontal: 16 },
-  messageRow: { marginBottom: 12 },
-  sender: { fontSize: 12, color: "#666", marginBottom: 2 },
-  messageBody: { fontSize: 16 },
+  messageRow: { marginBottom: 12, alignItems: "flex-start" },
+  messageRowMine: { alignItems: "flex-end" },
+  bubble: {
+    maxWidth: "80%",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+  },
+  bubbleTheirs: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  sender: { fontSize: 12, color: colors.muted, marginBottom: 2 },
+  messageBody: { fontSize: 16, color: colors.ink },
+  messageBodyMine: { color: colors.surface },
   inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: colors.border,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderColor: colors.border,
+    borderRadius: 14,
     padding: 12,
     fontSize: 16,
     maxHeight: 100,
+    backgroundColor: colors.surface,
+    color: colors.ink,
   },
   sendButton: {
-    backgroundColor: "#2f6f4f",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    justifyContent: "center",
   },
   sendButtonDisabled: { opacity: 0.5 },
-  sendButtonText: { color: "#fff", fontWeight: "600" },
+  sendButtonText: { color: colors.surface, fontWeight: "700" },
 });
