@@ -6,76 +6,84 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  withDelay,
   Easing,
 } from "react-native-reanimated";
 import { colors, fonts } from "@/lib/theme";
 
-function Spark({ angle, delay }: { angle: number; delay: number }) {
-  const progress = useSharedValue(0);
+const OFFSET = 4;
+const SIZE = 128;
 
-  useEffect(() => {
-    progress.value = withDelay(delay, withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) }));
-  }, [progress, delay]);
-
-  const style = useAnimatedStyle(() => {
-    const distance = 70 * progress.value;
-    return {
-      opacity: 1 - progress.value,
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - progress.value * 0.4 },
-      ],
-    };
-  });
-
-  return <Animated.View style={[styles.spark, style]} />;
-}
-
-/** The streak count with a slow breathing pulse, plus a one-shot burst of
- * sparks radiating outward when `celebrate` is true (fired on a milestone
- * check-in). */
+/** The streak count as a circular stamped badge — thick ink border, flat
+ * mustard fill, a slight permanent tilt like a rubber-stamped seal. A slow
+ * breathing scale plays at idle; a milestone check-in adds a one-shot
+ * "stamp impact" punch layered on top without interrupting the loop. */
 export function StreakBadge({ streak, celebrate }: { streak: number; celebrate: boolean }) {
-  const pulse = useSharedValue(1);
+  const breathe = useSharedValue(1);
+  const punch = useSharedValue(1);
 
   useEffect(() => {
-    pulse.value = withRepeat(
+    breathe.value = withRepeat(
       withSequence(
-        withTiming(1.06, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sin) })
+        withTiming(1.04, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
     );
-  }, [pulse]);
+  }, [breathe]);
 
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
+  useEffect(() => {
+    if (celebrate) {
+      punch.value = withSequence(
+        withTiming(1.3, { duration: 140, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: 320, easing: Easing.out(Easing.back(2)) })
+      );
+    }
+  }, [celebrate, punch]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: breathe.value * punch.value }, { rotate: "-4deg" }],
+  }));
 
   return (
     <View style={styles.wrap}>
-      {celebrate &&
-        Array.from({ length: 8 }).map((_, i) => (
-          <Spark key={i} angle={(i / 8) * Math.PI * 2} delay={i * 30} />
-        ))}
-      <Animated.View style={pulseStyle}>
+      <View style={styles.shadow} />
+      <Animated.View style={[styles.badge, animatedStyle]}>
         <Text style={styles.number}>{streak}</Text>
+        <Text style={styles.label}>week{"\n"}streak</Text>
       </Animated.View>
-      <Text style={styles.label}>week streak</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: "center", marginTop: 20 },
-  number: { fontFamily: fonts.displayBlack, fontSize: 48, color: colors.berry },
-  label: { fontSize: 13, color: colors.muted, letterSpacing: 1, textTransform: "uppercase", marginTop: 2 },
-  spark: {
+  wrap: { alignItems: "center", justifyContent: "center", marginTop: 16, width: SIZE, height: SIZE, alignSelf: "center" },
+  shadow: {
     position: "absolute",
-    top: 24,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.gold,
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    backgroundColor: colors.ink,
+    transform: [{ translateX: OFFSET }, { translateY: OFFSET }],
+  },
+  badge: {
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    borderWidth: 3,
+    borderColor: colors.ink,
+    backgroundColor: colors.mustard,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  number: { fontFamily: fonts.display, fontSize: 38, color: colors.ink, lineHeight: 42 },
+  label: {
+    fontFamily: fonts.label,
+    fontSize: 12,
+    color: colors.ink,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    textAlign: "center",
+    marginTop: 2,
   },
 });

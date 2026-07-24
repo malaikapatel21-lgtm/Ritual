@@ -98,19 +98,24 @@ the flow is testable without printing anything.
 
 ## Design system
 
-`src/lib/theme.ts` holds an editorial palette (warm ivory background,
-a handful of jewel-tone accents) and the Bodoni Moda display serif
-used for headings — the same family of typeface fashion-magazine
-mastheads use. Ritual types get their own accent color
-(`accentForRitual`), so a sauna pod and a yoga pod don't look
-identical. `src/components/Screen.tsx` is the shared root wrapper:
-every screen gets the gradient backdrop with two slow-drifting color
-blobs behind the content. `PrimaryButton.tsx` and `StreakBadge.tsx`
-are the other two reusable pieces — the button has a press-scale
-animation, and the badge has a slow breathing pulse plus a one-shot
-spark burst when a streak milestone lands. Screen transitions and
-incoming chat messages use Reanimated's built-in `FadeIn*` entering
-animations rather than anything hand-rolled.
+Bold retro-poster, not a soft editorial look: `src/lib/theme.ts` holds
+a flat vintage-athletic-club palette (aged cream paper, ink black,
+rust/pine/mustard/denim accents — no gradients) and three type roles —
+Alfa Slab One for display headlines, Barlow Condensed for uppercase
+labels and buttons, Archivo for body copy. Ritual types get their own
+accent color (`accentForRitual`), so a sauna pod and a yoga pod don't
+look identical. `src/components/Screen.tsx` is the shared root
+wrapper: a flat paper background, a bold printed color band across the
+top, and a slow-rotating sunburst (plain Views, no image assets)
+behind the header — a classic vintage-badge device. `PrimaryButton.tsx`
+and `StreakBadge.tsx` use a "stamped" hard-shadow device — a solid
+ink-colored duplicate sits offset behind the fill — throughout:
+pressing a button slides it down onto its shadow like a printed button
+being pushed flat, and the streak count is a circular badge with a
+permanent slight tilt, like a rubber-stamped seal. `PosterCard.tsx` is
+the same hard-shadow treatment for list rows and options. Screen
+transitions and incoming chat messages use Reanimated's built-in
+`FadeIn*` entering animations rather than anything hand-rolled.
 
 ## Mobile-native polish
 
@@ -130,10 +135,11 @@ website in a phone-shaped window:
   renders as its own full-screen overlay outside `Screen`, insets
   itself the same way.
 - **Confetti** (`src/components/ConfettiBurst.tsx`) — a hand-rolled
-  Reanimated particle burst (no added native dependency), reused for
-  three moments: finishing onboarding, a live waiting → matched
-  transition on the pod home screen, and a streak milestone (layered
-  behind `StreakBadge`'s existing spark burst).
+  Reanimated particle burst (sharp-edged rectangles and squares in the
+  poster palette, no added native dependency), reused for three
+  moments: finishing onboarding, a live waiting → matched transition on
+  the pod home screen, and a streak milestone (layered behind
+  `StreakBadge`'s "stamp impact" punch animation).
 - **OTP entry** (`verify.tsx`) — six auto-advancing digit boxes
   instead of one text field: typing a digit jumps to the next box,
   backspacing an empty box jumps back, pasting a full code fills every

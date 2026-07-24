@@ -25,6 +25,8 @@ import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { accentForRitual, colors, fonts } from "@/lib/theme";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 
+const OFFSET = 4;
+
 export default function PodHome() {
   const { session, signOut } = useAuth();
   const { loading, status, ritual, podId, members, streak, checkedInToday, refresh } = usePodMembership();
@@ -83,7 +85,7 @@ export default function PodHome() {
   if (loading) {
     return (
       <Screen style={styles.center}>
-        <ActivityIndicator color={colors.berry} />
+        <ActivityIndicator color={colors.rust} />
       </Screen>
     );
   }
@@ -91,7 +93,7 @@ export default function PodHome() {
   if (!status || !ritual) {
     return (
       <Screen style={styles.center}>
-        <Text style={styles.title}>No ritual yet</Text>
+        <Text style={styles.title}>NO RITUAL YET</Text>
         <Text style={styles.subtitle}>Something went wrong — try signing in again.</Text>
       </Screen>
     );
@@ -105,11 +107,14 @@ export default function PodHome() {
     return (
       <Screen accent={accent} style={styles.center}>
         <ConfettiBurst />
-        <Animated.View entering={ZoomIn.duration(450)} style={[styles.joinedCircle, { backgroundColor: accent }]}>
-          <Text style={styles.joinedMark}>✓</Text>
-        </Animated.View>
+        <View style={styles.joinedWrap}>
+          <View style={styles.joinedShadow} />
+          <Animated.View entering={ZoomIn.duration(450)} style={[styles.joinedCircle, { backgroundColor: accent }]}>
+            <Text style={styles.joinedMark}>✓</Text>
+          </Animated.View>
+        </View>
         <Animated.Text entering={FadeIn.delay(200).duration(400)} style={styles.joinedTitle}>
-          You're in a pod!
+          YOU'RE IN A POD!
         </Animated.Text>
         <Animated.Text entering={FadeIn.delay(350).duration(400)} style={styles.joinedSubtitle}>
           {ritual.ritual_type} at {ritual.venues.name} — say hi to your group.
@@ -126,7 +131,7 @@ export default function PodHome() {
           contentContainerStyle={{ flexGrow: 1 }}
         >
           <Animated.View entering={FadeInDown.duration(600)}>
-            <Text style={styles.title}>You're on the list</Text>
+            <Text style={styles.title}>YOU'RE ON THE LIST</Text>
             <Text style={styles.subtitle}>
               {ritual.ritual_type} at {ritual.venues.name} · {DAY_NAMES[ritual.day_of_week]}s at{" "}
               {formatTime(ritual.start_time)}
@@ -137,7 +142,7 @@ export default function PodHome() {
             </Text>
           </Animated.View>
           <Pressable onPress={signOut}>
-            <Text style={styles.signOut}>Sign out</Text>
+            <Text style={styles.signOut}>SIGN OUT</Text>
           </Pressable>
         </ScrollView>
       </Screen>
@@ -151,16 +156,17 @@ export default function PodHome() {
         data={members}
         keyExtractor={(item) => item.user_id}
         renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInRight.delay(index * 70).duration(350)}>
+          <Animated.View entering={FadeInRight.delay(index * 70).duration(350)} style={styles.memberRow}>
+            <View style={[styles.memberBullet, { backgroundColor: accent }]} />
             <Text style={styles.member}>
-              {item.user_id === session?.user.id ? "You" : item.full_name ?? "A member"}
+              {item.user_id === session?.user.id ? "YOU" : (item.full_name ?? "A MEMBER").toUpperCase()}
             </Text>
           </Animated.View>
         )}
         ListHeaderComponent={
           <>
             <Animated.View entering={FadeInDown.duration(600)}>
-              <Text style={[styles.title, { color: accent }]}>{ritual.ritual_type}</Text>
+              <Text style={[styles.title, { color: accent }]}>{ritual.ritual_type.toUpperCase()}</Text>
               <Text style={styles.subtitle}>
                 {ritual.venues.name} · {DAY_NAMES[ritual.day_of_week]}s at {formatTime(ritual.start_time)}
               </Text>
@@ -172,9 +178,9 @@ export default function PodHome() {
             </Animated.View>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitleInline}>Your pod</Text>
+              <Text style={styles.sectionTitleInline}>YOUR POD</Text>
               <Pressable onPress={() => router.push("/chat")}>
-                <Text style={[styles.chatLink, { color: accent }]}>Chat →</Text>
+                <Text style={[styles.chatLink, { color: accent }]}>CHAT →</Text>
               </Pressable>
             </View>
           </>
@@ -182,7 +188,7 @@ export default function PodHome() {
         ListFooterComponent={
           <View>
             <Text style={styles.sectionTitle}>
-              Next session: {sessionIsToday ? "Today" : DAY_NAMES[nextDate.getDay()]}
+              NEXT SESSION: {sessionIsToday ? "TODAY" : DAY_NAMES[nextDate.getDay()].toUpperCase()}
             </Text>
 
             <PrimaryButton
@@ -201,7 +207,7 @@ export default function PodHome() {
             />
 
             <Pressable onPress={signOut}>
-              <Text style={styles.signOut}>Sign out</Text>
+              <Text style={styles.signOut}>SIGN OUT</Text>
             </Pressable>
           </View>
         }
@@ -224,32 +230,70 @@ export default function PodHome() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 20 },
   center: { alignItems: "center", justifyContent: "center", gap: 8 },
-  title: { fontFamily: fonts.display, fontSize: 30, color: colors.ink, textTransform: "capitalize" },
-  subtitle: { fontSize: 15, color: colors.muted, marginTop: 4 },
-  body: { fontSize: 15, color: colors.ink, marginTop: 12 },
+  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, letterSpacing: 0.5 },
+  subtitle: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, marginTop: 4 },
+  body: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginTop: 12 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 24,
+    marginBottom: 10,
+    borderTopWidth: 2,
+    borderTopColor: colors.ink,
+    paddingTop: 14,
+  },
+  sectionTitle: {
+    fontFamily: fonts.label,
+    fontSize: 16,
+    color: colors.ink,
+    letterSpacing: 1,
+    marginTop: 20,
     marginBottom: 8,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "600", color: colors.ink, marginTop: 20, marginBottom: 8 },
-  sectionTitleInline: { fontSize: 16, fontWeight: "600", color: colors.ink },
-  chatLink: { fontSize: 15, fontWeight: "700" },
-  member: { fontSize: 15, paddingVertical: 4, color: colors.ink },
+  sectionTitleInline: { fontFamily: fonts.label, fontSize: 16, color: colors.ink, letterSpacing: 1 },
+  chatLink: { fontFamily: fonts.labelSemibold, fontSize: 15, letterSpacing: 0.5 },
+  memberRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
+  memberBullet: { width: 8, height: 8, borderRadius: 1 },
+  member: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.ink, letterSpacing: 0.3 },
   checkInButton: { marginTop: 12 },
-  signOut: { color: colors.muted, marginTop: 20, textAlign: "center", paddingBottom: 24 },
+  signOut: {
+    fontFamily: fonts.labelSemibold,
+    color: colors.muted,
+    marginTop: 20,
+    textAlign: "center",
+    paddingBottom: 24,
+    letterSpacing: 0.5,
+  },
+  joinedWrap: { width: 108, height: 108, alignItems: "center", justifyContent: "center" },
+  joinedShadow: {
+    position: "absolute",
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: colors.ink,
+    transform: [{ translateX: OFFSET }, { translateY: OFFSET }],
+  },
   joinedCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    borderWidth: 3,
+    borderColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
-  joinedMark: { fontSize: 46, color: colors.surface, fontWeight: "700" },
-  joinedTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginTop: 22, textAlign: "center" },
+  joinedMark: { fontSize: 46, color: colors.paper, fontWeight: "700" },
+  joinedTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    color: colors.ink,
+    marginTop: 22,
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
   joinedSubtitle: {
+    fontFamily: fonts.body,
     fontSize: 15,
     color: colors.muted,
     marginTop: 8,

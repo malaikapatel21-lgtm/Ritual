@@ -62,11 +62,11 @@ and sees everything.
 
 ## Design
 
-Same dark, candlelit family as the venue dashboard (deep ink
-background, Bodoni Moda/Newsreader fonts, the same accent palette),
-gold-forward instead of teal to mark this as the founder's tool rather
-than a venue owner's — the two ops surfaces are visually related but
-not identical.
+Same dark, poster-on-black family as the venue dashboard (near-black
+background, Alfa Slab One / Barlow Condensed / Archivo type, the same
+hard-shadow "stamped" cards and buttons), mustard-forward instead of
+pine to mark this as the founder's tool rather than a venue owner's —
+the two ops surfaces are visually related but not identical.
 
 ## Deliberately out of scope
 

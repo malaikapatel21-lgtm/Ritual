@@ -107,9 +107,9 @@ export default function Verify() {
   const code = digits.join("");
 
   return (
-    <Screen accent={colors.gold} style={styles.container}>
+    <Screen accent={colors.mustard} style={styles.container}>
       <Animated.View entering={FadeInDown.duration(600)}>
-        <Text style={styles.title}>Check your email</Text>
+        <Text style={styles.title}>CHECK YOUR EMAIL</Text>
         <Text style={styles.subtitle}>Enter the code we sent to {email}.</Text>
       </Animated.View>
 
@@ -148,22 +148,22 @@ export default function Verify() {
 
 const styles = StyleSheet.create({
   container: { justifyContent: "center", padding: 28, gap: 28 },
-  title: { fontFamily: fonts.display, fontSize: 32, color: colors.ink },
-  subtitle: { fontFamily: fonts.displayItalic, fontSize: 16, color: colors.muted, marginTop: 6 },
+  title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
+  subtitle: { fontFamily: fonts.body, fontSize: 16, color: colors.muted, marginTop: 8 },
   form: { gap: 14 },
   boxRow: { flexDirection: "row", justifyContent: "space-between" },
   box: {
     width: 46,
     height: 58,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: colors.ink,
+    borderRadius: 6,
+    fontFamily: fonts.bodyBold,
     fontSize: 22,
-    fontWeight: "700",
     textAlign: "center",
     backgroundColor: colors.surface,
     color: colors.ink,
   },
-  boxFilled: { borderColor: colors.gold },
-  error: { color: colors.berry },
+  boxFilled: { borderColor: colors.mustard, backgroundColor: colors.paperDeep },
+  error: { fontFamily: fonts.bodyMedium, color: colors.rust },
 });

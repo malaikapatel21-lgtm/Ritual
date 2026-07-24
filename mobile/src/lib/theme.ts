@@ -1,49 +1,49 @@
-// Editorial, fashion-magazine-inspired design system: a warm ivory canvas,
-// a Bodoni-style display serif for headlines (the same family of typeface
-// mastheads like Vogue use), and a small palette of jewel-tone accents
-// color-coded per ritual type.
+// Bold retro-poster design system: think vintage athletic-club and
+// wellness-retreat signage — aged cream paper stock, ink-black type, a
+// chunky slab-serif display face, and a flat duotone palette with no
+// soft gradients. Distinctive on purpose, not a fashion-magazine look.
 
 export const colors = {
-  background: "#FAF6F0",
-  surface: "#FFFFFF",
-  surfaceMuted: "#F1E9DE",
-  ink: "#1B1611",
-  muted: "#8A7F72",
-  border: "#E8DFD3",
-  berry: "#B0335C",
-  gold: "#C9A24B",
-  teal: "#2E6E62",
-  terracotta: "#C1652F",
-  plum: "#6B4A8A",
+  paper: "#F2E6CE",
+  paperDeep: "#E8D8AF",
+  surface: "#FBF4E2",
+  ink: "#201A14",
+  muted: "#6B5D48",
+  border: "#201A14",
+  rust: "#C1440E",
+  pine: "#26402F",
+  mustard: "#E0A030",
+  denim: "#3D5A73",
 } as const;
 
-export const gradients = {
-  primary: [colors.berry, colors.terracotta] as const,
-  gold: [colors.gold, colors.terracotta] as const,
-};
-
 export const fonts = {
-  display: "BodoniModa_700Bold",
-  displaySemibold: "BodoniModa_600SemiBold",
-  displayItalic: "BodoniModa_500Medium_Italic",
-  displayBlack: "BodoniModa_900Black",
+  display: "AlfaSlabOne_400Regular",
+  label: "BarlowCondensed_700Bold",
+  labelSemibold: "BarlowCondensed_600SemiBold",
+  body: "Archivo_400Regular",
+  bodyMedium: "Archivo_500Medium",
+  bodySemibold: "Archivo_600SemiBold",
+  bodyBold: "Archivo_700Bold",
 };
 
 export const FONT_ASSETS = {
-  BodoniModa_500Medium_Italic: require("@expo-google-fonts/bodoni-moda/500Medium_Italic/BodoniModa_500Medium_Italic.ttf"),
-  BodoniModa_600SemiBold: require("@expo-google-fonts/bodoni-moda/600SemiBold/BodoniModa_600SemiBold.ttf"),
-  BodoniModa_700Bold: require("@expo-google-fonts/bodoni-moda/700Bold/BodoniModa_700Bold.ttf"),
-  BodoniModa_900Black: require("@expo-google-fonts/bodoni-moda/900Black/BodoniModa_900Black.ttf"),
+  AlfaSlabOne_400Regular: require("@expo-google-fonts/alfa-slab-one/400Regular/AlfaSlabOne_400Regular.ttf"),
+  BarlowCondensed_600SemiBold: require("@expo-google-fonts/barlow-condensed/600SemiBold/BarlowCondensed_600SemiBold.ttf"),
+  BarlowCondensed_700Bold: require("@expo-google-fonts/barlow-condensed/700Bold/BarlowCondensed_700Bold.ttf"),
+  Archivo_400Regular: require("@expo-google-fonts/archivo/400Regular/Archivo_400Regular.ttf"),
+  Archivo_500Medium: require("@expo-google-fonts/archivo/500Medium/Archivo_500Medium.ttf"),
+  Archivo_600SemiBold: require("@expo-google-fonts/archivo/600SemiBold/Archivo_600SemiBold.ttf"),
+  Archivo_700Bold: require("@expo-google-fonts/archivo/700Bold/Archivo_700Bold.ttf"),
 };
 
 const RITUAL_ACCENTS: Record<string, string> = {
-  sauna: colors.terracotta,
-  walk: colors.teal,
-  "run club": colors.berry,
-  yoga: colors.plum,
+  sauna: colors.rust,
+  walk: colors.pine,
+  "run club": colors.denim,
+  yoga: colors.mustard,
 };
 
 export function accentForRitual(ritualType: string | undefined): string {
-  if (!ritualType) return colors.gold;
-  return RITUAL_ACCENTS[ritualType.toLowerCase()] ?? colors.gold;
+  if (!ritualType) return colors.mustard;
+  return RITUAL_ACCENTS[ritualType.toLowerCase()] ?? colors.mustard;
 }

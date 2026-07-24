@@ -154,9 +154,10 @@ User signs up for a ritual
   onboarding wizard, and the pod home screen with venue-code
   check-in; Phase 2's pod chat (Supabase Realtime on `messages`) and
   push notifications (pod-formed, session reminders, streak
-  milestones); and an editorial visual redesign (Bodoni Moda display
-  serif, vibe-tag-colorful palette, animated backgrounds and streak
-  celebrations). See `mobile/README.md` for setup.
+  milestones); and a bold retro-poster visual design (Alfa Slab One
+  display type, a flat vintage-athletic-club palette, hard-edged
+  "stamped" UI, and streak celebrations). See `mobile/README.md` for
+  setup.
 - `venue-dashboard/` — the Phase 3 venue partner dashboard: per-ritual
   waiting/pod/member counts, average streak, and 4-week check-in
   counts, gated by a `venue_owners` link so an owner only ever sees

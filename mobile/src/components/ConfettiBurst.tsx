@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { colors } from "@/lib/theme";
 
-const PIECE_COLORS = [colors.berry, colors.gold, colors.teal, colors.terracotta, colors.plum];
+const PIECE_COLORS = [colors.rust, colors.pine, colors.mustard, colors.denim, colors.ink];
 
 function ConfettiPiece({ index }: { index: number }) {
   const progress = useSharedValue(0);
@@ -20,7 +20,7 @@ function ConfettiPiece({ index }: { index: number }) {
   const delay = Math.random() * 180;
   const duration = 1000 + Math.random() * 500;
   const color = PIECE_COLORS[index % PIECE_COLORS.length];
-  const isCircle = index % 3 === 0;
+  const isSquare = index % 3 === 0;
 
   useEffect(() => {
     progress.value = withDelay(delay, withTiming(1, { duration, easing: Easing.out(Easing.quad) }));
@@ -41,7 +41,7 @@ function ConfettiPiece({ index }: { index: number }) {
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.piece, isCircle && styles.circle, { backgroundColor: color }, style]}
+      style={[styles.piece, isSquare && styles.square, { backgroundColor: color }, style]}
     />
   );
 }
@@ -62,6 +62,6 @@ export function ConfettiBurst({ count = 28 }: { count?: number }) {
 
 const styles = StyleSheet.create({
   wrap: { alignItems: "center" },
-  piece: { position: "absolute", top: 0, width: 9, height: 14, borderRadius: 2 },
-  circle: { width: 9, height: 9, borderRadius: 5 },
+  piece: { position: "absolute", top: 0, width: 9, height: 15, borderRadius: 1 },
+  square: { width: 10, height: 10 },
 });

@@ -1,11 +1,13 @@
-import { Pressable, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Pressable, Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { colors, gradients } from "@/lib/theme";
+import { colors, fonts } from "@/lib/theme";
 import { hapticTap } from "@/lib/haptics";
 
-const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
+const OFFSET = 4;
 
+/** A flat, hard-edged "stamped" button: a solid ink-colored duplicate sits
+ * offset behind the fill, and pressing slides the fill down onto it — like a
+ * printed button being pushed flat — instead of a soft scale-and-fade. */
 export function PrimaryButton({
   title,
   onPress,
@@ -19,42 +21,60 @@ export function PrimaryButton({
   variant?: "primary" | "gold";
   style?: StyleProp<ViewStyle>;
 }) {
-  const scale = useSharedValue(1);
+  const press = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ translateX: press.value }, { translateY: press.value }],
   }));
 
+  const fill = variant === "gold" ? colors.mustard : colors.rust;
+
   return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withTiming(0.96, { duration: 100 });
-        hapticTap();
-      }}
-      onPressOut={() => (scale.value = withTiming(1, { duration: 150 }))}
-      style={style}
-    >
-      <AnimatedGradient
-        colors={variant === "gold" ? gradients.gold : gradients.primary}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[styles.button, animatedStyle, disabled && styles.disabled]}
+    <View style={style}>
+      <View style={[styles.shadow, disabled && styles.disabled]} />
+      <Pressable
+        disabled={disabled}
+        onPress={onPress}
+        onPressIn={() => {
+          press.value = withTiming(OFFSET, { duration: 70 });
+          hapticTap();
+        }}
+        onPressOut={() => (press.value = withTiming(0, { duration: 130 }))}
       >
-        <Text style={styles.text}>{title}</Text>
-      </AnimatedGradient>
-    </Pressable>
+        <Animated.View
+          style={[styles.button, { backgroundColor: fill }, animatedStyle, disabled && styles.disabled]}
+        >
+          <Text style={styles.text}>{title.toUpperCase()}</Text>
+        </Animated.View>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  shadow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.ink,
+    borderRadius: 4,
+    transform: [{ translateX: OFFSET }, { translateY: OFFSET }],
+  },
   button: {
-    borderRadius: 14,
-    paddingVertical: 15,
+    borderRadius: 4,
+    borderWidth: 2.5,
+    borderColor: colors.ink,
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   disabled: { opacity: 0.45 },
-  text: { color: colors.surface, fontWeight: "700", fontSize: 16, letterSpacing: 0.3 },
+  text: {
+    fontFamily: fonts.labelSemibold,
+    color: colors.ink,
+    fontSize: 18,
+    letterSpacing: 1.2,
+  },
 });

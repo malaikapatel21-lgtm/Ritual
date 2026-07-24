@@ -47,9 +47,11 @@ a second revenue line, not something pod members ever see.
 ## Design
 
 Deliberately different from the consumer-facing signup page and
-mobile app: a dark, candlelit theme (deep ink background, warm amber
-glow) instead of the light editorial look — this is a backstage tool
-a venue owner checks after hours, not something shown to members.
-Same Bodoni Moda/Newsreader font pairing and the same accent hues as
-everywhere else in the product, just teal-forward here instead of
-berry, so it still reads as the same brand.
+mobile app: a dark inverted variant of the same retro-poster system —
+near-black background instead of cream paper — since this is a
+backstage tool a venue owner checks after hours, not something shown
+to members. Same Alfa Slab One / Barlow Condensed / Archivo type and
+the same hard-shadow "stamped" cards and buttons as everywhere else in
+the product, just pine-green-forward here instead of rust, so it still
+reads as the same brand while staying visually distinct from the
+admin tool.

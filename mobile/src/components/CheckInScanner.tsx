@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,8 @@ import Animated, {
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { colors, fonts } from "@/lib/theme";
+
+const OFFSET = 4;
 
 /** Full-screen overlay: scan the QR code posted at the venue (or type it in)
  * and verify it against the ritual's check_in_code before letting the caller
@@ -62,11 +64,14 @@ export function CheckInScanner({
   if (verified) {
     return (
       <View style={[styles.overlay, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
-        <Animated.View entering={ZoomIn.duration(400)} style={styles.successCircle}>
-          <Text style={styles.successMark}>✓</Text>
-        </Animated.View>
+        <View style={styles.successWrap}>
+          <View style={styles.successShadow} />
+          <Animated.View entering={ZoomIn.duration(400)} style={styles.successCircle}>
+            <Text style={styles.successMark}>✓</Text>
+          </Animated.View>
+        </View>
         <Animated.Text entering={ZoomIn.delay(150).duration(300)} style={styles.successText}>
-          You're checked in!
+          CHECKED IN
         </Animated.Text>
       </View>
     );
@@ -74,7 +79,7 @@ export function CheckInScanner({
 
   return (
     <View style={[styles.overlay, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
-      <Text style={styles.title}>Scan to check in</Text>
+      <Text style={styles.title}>Scan to Check In</Text>
       <Text style={styles.subtitle}>Find the code posted at your venue.</Text>
 
       {!manualEntry && !permission?.granted && (
@@ -106,7 +111,7 @@ export function CheckInScanner({
         <Animated.View style={[styles.box, shakeStyle]}>
           <TextInput
             style={styles.input}
-            placeholder="Venue code"
+            placeholder="VENUE CODE"
             placeholderTextColor={colors.muted}
             autoCapitalize="characters"
             value={manualCode}
@@ -139,52 +144,71 @@ export function CheckInScanner({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.background,
+    backgroundColor: colors.paper,
     padding: 24,
     alignItems: "center",
     gap: 16,
   },
-  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink },
-  subtitle: { fontSize: 15, color: colors.muted, textAlign: "center" },
-  body: { fontSize: 15, color: colors.ink, textAlign: "center" },
+  title: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  subtitle: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center" },
+  body: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, textAlign: "center" },
   box: { width: "100%", gap: 12 },
   cameraBox: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: 20,
+    borderRadius: 8,
+    borderWidth: 3,
+    borderColor: colors.ink,
     overflow: "hidden",
     backgroundColor: colors.ink,
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: colors.ink,
+    borderRadius: 6,
     padding: 15,
+    fontFamily: fonts.labelSemibold,
     fontSize: 18,
     letterSpacing: 4,
     textAlign: "center",
     backgroundColor: colors.surface,
     color: colors.ink,
   },
-  error: { color: colors.berry, textAlign: "center" },
-  link: { color: colors.teal, fontWeight: "600" },
-  cancel: { color: colors.muted, marginTop: 8 },
-  successCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.teal,
+  error: { fontFamily: fonts.bodyMedium, color: colors.rust, textAlign: "center" },
+  link: { fontFamily: fonts.bodySemibold, color: colors.denim, fontWeight: "600" },
+  cancel: { fontFamily: fonts.body, color: colors.muted, marginTop: 8 },
+  successWrap: {
+    width: 110,
+    height: 110,
     alignItems: "center",
     justifyContent: "center",
     marginTop: "auto",
-    marginBottom: 0,
   },
-  successMark: { fontSize: 44, color: colors.surface, fontWeight: "700" },
+  successShadow: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: colors.ink,
+    transform: [{ translateX: OFFSET }, { translateY: OFFSET }],
+  },
+  successCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    borderColor: colors.ink,
+    backgroundColor: colors.pine,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successMark: { fontSize: 44, color: colors.paper, fontWeight: "700" },
   successText: {
-    fontFamily: fonts.display,
-    fontSize: 24,
+    fontFamily: fonts.label,
+    fontSize: 22,
+    letterSpacing: 2,
     color: colors.ink,
-    marginTop: 20,
+    marginTop: 18,
     marginBottom: "auto",
   },
 });

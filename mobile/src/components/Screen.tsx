@@ -1,102 +1,74 @@
 import { useEffect } from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
   Easing,
 } from "react-native-reanimated";
 import { colors } from "@/lib/theme";
 
-function Blob({
-  color,
-  size,
-  start,
-  drift,
-  duration,
-}: {
-  color: string;
-  size: number;
-  start: { top?: number; bottom?: number; left?: number; right?: number };
-  drift: { x: number; y: number };
-  duration: number;
-}) {
-  const progress = useSharedValue(0);
+const RAY_COUNT = 16;
+
+/** A slow-rotating sunburst built from plain Views — a classic vintage-badge
+ * device, in flat low-opacity color rather than a soft blur. Each ray sits in
+ * its own full-size wrapper so its rotation pivots around the shared center. */
+function Sunburst({ color, size }: { color: string; size: number }) {
+  const rotation = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1,
-      false
-    );
-  }, [progress, duration]);
+    rotation.value = withRepeat(withTiming(360, { duration: 60000, easing: Easing.linear }), -1, false);
+  }, [rotation]);
 
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: progress.value * drift.x },
-      { translateY: progress.value * drift.y },
-    ],
-  }));
+  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));
 
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        {
-          position: "absolute",
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: color,
-          opacity: 0.16,
-          ...start,
-        },
-        style,
-      ]}
-    />
+    <Animated.View pointerEvents="none" style={[{ width: size, height: size }, spin]}>
+      {Array.from({ length: RAY_COUNT }).map((_, i) => (
+        <View key={i} style={[StyleSheet.absoluteFill, { transform: [{ rotate: `${(360 / RAY_COUNT) * i}deg` }] }]}>
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: size / 2 - 1.5,
+              width: 3,
+              height: size / 2,
+              backgroundColor: color,
+              opacity: 0.1,
+            }}
+          />
+        </View>
+      ))}
+    </Animated.View>
   );
 }
 
-/** Shared root container: warm editorial gradient backdrop with a couple of
- * slow-drifting color blobs behind the content. Used by every screen so the
- * "colorful, lots of moving graphics" look stays consistent app-wide. */
+/** Shared root container: flat cream paper stock, a bold printed color band
+ * across the very top, and a slow-rotating sunburst behind the header — no
+ * soft gradients or blur, in keeping with the flat-color poster aesthetic. */
 export function Screen({
   children,
   style,
-  accent = colors.berry,
+  accent = colors.rust,
   edges = ["top", "bottom", "left", "right"],
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
   accent?: string;
   /** Which safe-area edges to inset for. Screens that manage their own
-   * bottom spacing (e.g. a chat input bar that already sits above the home
-   * indicator) can drop "bottom" to avoid double-padding. */
+   * bottom spacing can drop "bottom" to avoid double-padding. */
   edges?: Array<"top" | "bottom" | "left" | "right">;
 }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.background, colors.surfaceMuted]}
-        style={StyleSheet.absoluteFill}
-      />
-      <Blob color={accent} size={260} start={{ top: -80, right: -70 }} drift={{ x: 24, y: 30 }} duration={9000} />
-      <Blob
-        color={colors.gold}
-        size={220}
-        start={{ bottom: -60, left: -60 }}
-        drift={{ x: -20, y: -24 }}
-        duration={11000}
-      />
+      <View style={[styles.topBand, { backgroundColor: accent }]} />
+      <View style={styles.sunburstWrap} pointerEvents="none">
+        <Sunburst color={accent} size={420} />
+      </View>
       <View
         style={{
           flex: 1,
@@ -113,6 +85,14 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.paper },
+  topBand: { height: 6, width: "100%" },
+  sunburstWrap: {
+    position: "absolute",
+    top: -160,
+    right: -160,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   content: { flex: 1 },
 });

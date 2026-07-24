@@ -34,11 +34,14 @@ No pods are formed here — that's `matchPods`, in Phase 1.
 
 ## Design
 
-Same visual language as the mobile app — Bodoni Moda for headlines,
-Newsreader for body copy, the same jewel-tone accent palette, and a
-warm ivory gradient with drifting color blobs (pure CSS, no JS) so
-someone's very first touchpoint with the product already looks like
-the app they'll eventually download.
+Same visual language as the mobile app — a bold retro-poster look, not
+a soft editorial one: Alfa Slab One for headlines, Barlow Condensed for
+labels and buttons, Archivo for body copy, a flat vintage-athletic-club
+palette (aged cream paper, ink black, rust/pine/mustard), a halftone
+dot texture and a slow-rotating sunburst (pure CSS — `conic-gradient`
+and `radial-gradient`, no JS, no image assets), and hard-shadow
+"stamped" buttons and cards, so someone's very first touchpoint with
+the product already looks like the app they'll eventually download.
 
 ## Reading the result
 

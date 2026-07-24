@@ -100,7 +100,7 @@ export default function Chat() {
   if (membershipLoading || loadingMessages) {
     return (
       <Screen style={styles.center}>
-        <ActivityIndicator color={colors.berry} />
+        <ActivityIndicator color={colors.rust} />
       </Screen>
     );
   }
@@ -122,9 +122,9 @@ export default function Chat() {
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
-            <Text style={[styles.back, { color: accent }]}>← Back</Text>
+            <Text style={[styles.back, { color: accent }]}>← BACK</Text>
           </Pressable>
-          <Text style={styles.title}>{ritual?.ritual_type} pod</Text>
+          <Text style={styles.title}>{ritual?.ritual_type.toUpperCase()} POD</Text>
         </View>
 
         <FlatList
@@ -141,7 +141,7 @@ export default function Chat() {
                 style={[styles.messageRow, isMe && styles.messageRowMine]}
               >
                 <View style={[styles.bubble, isMe ? { backgroundColor: accent } : styles.bubbleTheirs]}>
-                  {!isMe && <Text style={styles.sender}>{nameFor(item.user_id)}</Text>}
+                  {!isMe && <Text style={styles.sender}>{nameFor(item.user_id).toUpperCase()}</Text>}
                   <Text style={[styles.messageBody, isMe && styles.messageBodyMine]}>{item.body}</Text>
                 </View>
               </Animated.View>
@@ -164,7 +164,7 @@ export default function Chat() {
             disabled={!draft.trim() || sending}
             onPress={send}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Text style={styles.sendButtonText}>SEND</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -181,10 +181,12 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 16,
     paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.ink,
   },
-  back: { fontSize: 15, fontWeight: "700" },
-  title: { fontFamily: fonts.displaySemibold, fontSize: 20, color: colors.ink, textTransform: "capitalize" },
-  subtitle: { fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 24 },
+  back: { fontFamily: fonts.labelSemibold, fontSize: 15, letterSpacing: 0.5 },
+  title: { fontFamily: fonts.label, fontSize: 20, color: colors.ink, letterSpacing: 0.5 },
+  subtitle: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: "center", marginTop: 24 },
   list: { flex: 1, paddingHorizontal: 16 },
   messageRow: { marginBottom: 12, alignItems: "flex-start" },
   messageRowMine: { alignItems: "flex-end" },
@@ -192,37 +194,42 @@ const styles = StyleSheet.create({
     maxWidth: "80%",
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.ink,
   },
-  bubbleTheirs: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  sender: { fontSize: 12, color: colors.muted, marginBottom: 2 },
-  messageBody: { fontSize: 16, color: colors.ink },
-  messageBodyMine: { color: colors.surface },
+  bubbleTheirs: { backgroundColor: colors.surface },
+  sender: { fontFamily: fonts.label, fontSize: 11, color: colors.muted, marginBottom: 2, letterSpacing: 0.5 },
+  messageBody: { fontFamily: fonts.body, fontSize: 16, color: colors.ink },
+  messageBodyMine: { color: colors.paper },
   inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
     padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopWidth: 2,
+    borderTopColor: colors.ink,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    borderRadius: 6,
     padding: 12,
+    fontFamily: fonts.body,
     fontSize: 16,
     maxHeight: 100,
     backgroundColor: colors.surface,
     color: colors.ink,
   },
   sendButton: {
-    borderRadius: 14,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.ink,
     paddingVertical: 12,
     paddingHorizontal: 18,
     justifyContent: "center",
   },
   sendButtonDisabled: { opacity: 0.5 },
-  sendButtonText: { color: colors.surface, fontWeight: "700" },
+  sendButtonText: { fontFamily: fonts.labelSemibold, color: colors.paper, letterSpacing: 0.5 },
 });

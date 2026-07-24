@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { Text, TextInput, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { supabase } from "@/lib/supabase";
@@ -26,16 +26,17 @@ export default function SignIn() {
   }
 
   return (
-    <Screen accent={colors.berry} style={styles.container}>
+    <Screen accent={colors.rust} style={styles.container}>
       <Animated.View entering={FadeInDown.duration(600)}>
-        <Text style={styles.title}>Ritual</Text>
+        <Text style={styles.kicker}>WEEKLY · IN PERSON · WITH YOUR POD</Text>
+        <Text style={styles.title}>RITUAL</Text>
         <Text style={styles.subtitle}>Enter your email and we'll send you a sign-in code.</Text>
       </Animated.View>
 
       <Animated.View entering={FadeInUp.delay(150).duration(600)} style={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder="you@example.com"
+          placeholder="YOU@EXAMPLE.COM"
           placeholderTextColor={colors.muted}
           autoCapitalize="none"
           keyboardType="email-address"
@@ -58,17 +59,25 @@ export default function SignIn() {
 
 const styles = StyleSheet.create({
   container: { justifyContent: "center", padding: 28, gap: 28 },
-  title: { fontFamily: fonts.display, fontSize: 40, color: colors.ink },
-  subtitle: { fontFamily: fonts.displayItalic, fontSize: 17, color: colors.muted, marginTop: 6 },
+  kicker: {
+    fontFamily: fonts.label,
+    fontSize: 14,
+    color: colors.rust,
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  title: { fontFamily: fonts.display, fontSize: 52, color: colors.ink, letterSpacing: 1 },
+  subtitle: { fontFamily: fonts.body, fontSize: 16, color: colors.muted, marginTop: 10 },
   form: { gap: 14 },
   input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: colors.ink,
+    borderRadius: 6,
     padding: 15,
+    fontFamily: fonts.bodyMedium,
     fontSize: 16,
     backgroundColor: colors.surface,
     color: colors.ink,
   },
-  error: { color: colors.berry },
+  error: { fontFamily: fonts.bodyMedium, color: colors.rust },
 });
