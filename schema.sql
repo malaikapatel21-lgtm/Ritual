@@ -235,3 +235,97 @@ returns table (ritual_id uuid, waiting_count bigint) as $$
 $$ language sql stable security definer;
 
 grant execute on function public.ritual_signup_counts() to anon, authenticated;
+
+-- ------------------------------------------------------------
+-- venue_owners — links a profile to the venue(s) they manage, for
+-- the venue partner dashboard. No self-serve signup yet: rows are
+-- added by hand (SQL editor) when a venue partnership is set up.
+-- ------------------------------------------------------------
+create table if not exists public.venue_owners (
+  id uuid primary key default gen_random_uuid(),
+  venue_id uuid not null references public.venues (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (venue_id, user_id)
+);
+
+alter table public.venue_owners enable row level security;
+
+create policy "owners can see their own venue_owners rows"
+  on public.venue_owners for select using (auth.uid() = user_id);
+
+-- ------------------------------------------------------------
+-- my_venues / venue_dashboard_stats — the venue partner dashboard's
+-- only two reads. Both are security definer and self-check
+-- ownership via venue_owners inside the function body (RLS is
+-- bypassed for security definer functions, so the check has to be
+-- explicit) — a signed-in venue owner never sees another venue's
+-- data, and stats are aggregate-only, never member names or contact
+-- info.
+-- ------------------------------------------------------------
+create or replace function public.my_venues()
+returns table (venue_id uuid, name text, city text, neighborhood text) as $$
+  select v.id, v.name, v.city, v.neighborhood
+  from public.venues v
+  join public.venue_owners vo on vo.venue_id = v.id
+  where vo.user_id = auth.uid();
+$$ language sql stable security definer;
+
+grant execute on function public.my_venues() to authenticated;
+
+create or replace function public.venue_dashboard_stats(p_venue_id uuid)
+returns table (
+  ritual_id uuid,
+  ritual_type text,
+  day_of_week smallint,
+  start_time time,
+  waiting_count bigint,
+  active_pod_count bigint,
+  member_count bigint,
+  avg_current_streak numeric,
+  checkins_last_4_weeks bigint
+) as $$
+begin
+  if not exists (
+    select 1 from public.venue_owners
+    where venue_id = p_venue_id and user_id = auth.uid()
+  ) then
+    raise exception 'not authorized for this venue';
+  end if;
+
+  return query
+  select
+    r.id,
+    r.ritual_type,
+    r.day_of_week,
+    r.start_time,
+    (
+      select count(*) from public.ritual_signups rs
+      where rs.ritual_id = r.id and rs.status = 'waiting'
+    ) as waiting_count,
+    (
+      select count(*) from public.pods p
+      where p.ritual_id = r.id and p.status = 'active'
+    ) as active_pod_count,
+    (
+      select count(*) from public.pod_members pm
+      join public.pods p on p.id = pm.pod_id
+      where p.ritual_id = r.id and p.status = 'active'
+    ) as member_count,
+    (
+      select coalesce(avg(s.current_streak), 0) from public.streaks s
+      join public.pods p on p.id = s.pod_id
+      where p.ritual_id = r.id and p.status = 'active'
+    ) as avg_current_streak,
+    (
+      select count(*) from public.attendance a
+      join public.pods p on p.id = a.pod_id
+      where p.ritual_id = r.id and a.checked_in = true
+        and a.session_date >= (current_date - interval '28 days')
+    ) as checkins_last_4_weeks
+  from public.rituals r
+  where r.venue_id = p_venue_id;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.venue_dashboard_stats(uuid) to authenticated;

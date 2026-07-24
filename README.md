@@ -87,8 +87,14 @@ User signs up for a ritual
   no attendance history yet, there's a low ceiling on how much
   better the AI grouping can actually do over even bucketing — watch
   real pod outcomes before leaning on it further.
-- Venue partner dashboard (this is where it can merge with the
-  "venue-side layer" idea from earlier if you want a second revenue line).
+- Venue partner dashboard (`venue-dashboard/`) — a read-only page
+  for venue staff: waiting count, active pods, member count, average
+  streak, and check-ins over the last 4 weeks per ritual, flagging
+  anything averaging under 3 weeks of streak per the number below.
+  This is the second revenue line the "venue-side layer" idea
+  pointed at. No self-serve venue signup yet — linking a venue to its
+  owner is a manual SQL insert (`venue_owners`) until there's demand
+  to automate it.
 
 ## Stack
 
@@ -117,12 +123,16 @@ User signs up for a ritual
 - `web/` — a Phase 0 signup page for validating demand in a single
   neighborhood before building the full app.
 - `mobile/` — the Phase 1 Expo app: magic-code sign-in, the
-  onboarding wizard, and the pod home screen with check-in; Phase
-  2's pod chat (Supabase Realtime on `messages`) and push
-  notifications (pod-formed, session reminders, streak milestones);
-  and an editorial visual redesign (Bodoni Moda display serif,
-  vibe-tag-colorful palette, animated backgrounds and streak
+  onboarding wizard, and the pod home screen with venue-code
+  check-in; Phase 2's pod chat (Supabase Realtime on `messages`) and
+  push notifications (pod-formed, session reminders, streak
+  milestones); and an editorial visual redesign (Bodoni Moda display
+  serif, vibe-tag-colorful palette, animated backgrounds and streak
   celebrations). See `mobile/README.md` for setup.
+- `venue-dashboard/` — the Phase 3 venue partner dashboard: per-ritual
+  waiting/pod/member counts, average streak, and 4-week check-in
+  counts, gated by a `venue_owners` link so an owner only ever sees
+  their own venue's numbers. See `venue-dashboard/README.md` for setup.
 
 ## The one number that matters before you monetize
 
