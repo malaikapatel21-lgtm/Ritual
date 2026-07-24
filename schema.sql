@@ -128,6 +128,18 @@ create table if not exists public.messages (
 create index if not exists messages_pod_id_created_at_idx
   on public.messages (pod_id, created_at);
 
+-- Turn on Realtime change streaming for pod chat. Guarded because
+-- `alter publication ... add table` errors if run twice.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+end $$;
+
 -- ------------------------------------------------------------
 -- Row Level Security — members can only see their own pods
 -- ------------------------------------------------------------

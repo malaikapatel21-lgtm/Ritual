@@ -86,8 +86,10 @@ User signs up for a ritual
 - `web/` — a Phase 0 signup page for validating demand in a single
   neighborhood before building the full app.
 - `mobile/` — the Phase 1 Expo app: magic-code sign-in, the
-  onboarding wizard, and the pod home screen with check-in. See
-  `mobile/README.md` for setup.
+  onboarding wizard, and the pod home screen with check-in, plus
+  Phase 2's pod chat (Supabase Realtime on `messages`). See
+  `mobile/README.md` for setup. Push notifications are the other
+  Phase 2 piece and aren't built yet.
 
 ## The one number that matters before you monetize
 

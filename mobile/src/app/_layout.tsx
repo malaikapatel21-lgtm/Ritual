@@ -26,6 +26,7 @@ function RootNavigator() {
 
       <Stack.Protected guard={!!session && onboardingComplete}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="chat" />
       </Stack.Protected>
     </Stack>
   );

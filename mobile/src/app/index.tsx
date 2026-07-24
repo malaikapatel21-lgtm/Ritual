@@ -1,97 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, Pressable, FlatList, ActivityIndicator, StyleSheet } from "react-native";
+import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthProvider";
+import { usePodMembership } from "@/lib/usePodMembership";
 import { DAY_NAMES, formatTime, isSessionDay, nextSessionDate, toISODate } from "@/lib/dates";
-import type { PodMemberProfile, SignupStatus, Streak } from "@/lib/types";
-
-interface RitualInfo {
-  id: string;
-  ritual_type: string;
-  day_of_week: number;
-  start_time: string;
-  venues: { name: string };
-}
 
 export default function PodHome() {
   const { session, signOut } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<SignupStatus | null>(null);
-  const [ritual, setRitual] = useState<RitualInfo | null>(null);
-  const [podId, setPodId] = useState<string | null>(null);
-  const [members, setMembers] = useState<PodMemberProfile[]>([]);
-  const [streak, setStreak] = useState<Streak | null>(null);
-  const [checkedInToday, setCheckedInToday] = useState(false);
+  const { loading, status, ritual, podId, members, streak, checkedInToday, refresh } = usePodMembership();
   const [checkingIn, setCheckingIn] = useState(false);
-
-  const load = useCallback(async () => {
-    if (!session) return;
-    setLoading(true);
-
-    const { data: signup } = await supabase
-      .from("ritual_signups")
-      .select("status, rituals(id, ritual_type, day_of_week, start_time, venues(name))")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!signup) {
-      setLoading(false);
-      return;
-    }
-
-    const ritualInfo = signup.rituals as unknown as RitualInfo;
-    setStatus(signup.status as SignupStatus);
-    setRitual(ritualInfo);
-
-    if (signup.status === "matched" && ritualInfo) {
-      const { data: membership } = await supabase
-        .from("pod_members")
-        .select("pod_id, pods!inner(ritual_id)")
-        .eq("user_id", session.user.id)
-        .eq("pods.ritual_id", ritualInfo.id)
-        .limit(1)
-        .maybeSingle();
-
-      if (membership) {
-        const currentPodId = membership.pod_id as string;
-        setPodId(currentPodId);
-
-        const [{ data: memberRows }, { data: streakRow }, { data: attendanceRow }] = await Promise.all([
-          supabase.from("pod_members").select("user_id, profiles(full_name)").eq("pod_id", currentPodId),
-          supabase
-            .from("streaks")
-            .select("current_streak, longest_streak, last_session_date")
-            .eq("pod_id", currentPodId)
-            .eq("user_id", session.user.id)
-            .maybeSingle(),
-          supabase
-            .from("attendance")
-            .select("checked_in")
-            .eq("pod_id", currentPodId)
-            .eq("user_id", session.user.id)
-            .eq("session_date", toISODate(new Date()))
-            .maybeSingle(),
-        ]);
-
-        setMembers(
-          (memberRows ?? []).map((row) => ({
-            user_id: row.user_id,
-            full_name: (row.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
-          }))
-        );
-        setStreak(streakRow ?? { current_streak: 0, longest_streak: 0, last_session_date: null });
-        setCheckedInToday(attendanceRow?.checked_in ?? false);
-      }
-    }
-
-    setLoading(false);
-  }, [session]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   async function checkIn() {
     if (!session || !podId) return;
@@ -103,7 +21,7 @@ export default function PodHome() {
     });
     setCheckingIn(false);
     if (!error) {
-      await load();
+      await refresh();
     }
   }
 
@@ -157,7 +75,12 @@ export default function PodHome() {
         <Text style={styles.streakLabel}>week streak</Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Your pod</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitleInline}>Your pod</Text>
+        <Pressable onPress={() => router.push("/chat")}>
+          <Text style={styles.chatLink}>Chat →</Text>
+        </Pressable>
+      </View>
       <FlatList
         data={members}
         keyExtractor={(item) => item.user_id}
@@ -204,7 +127,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "700", textTransform: "capitalize" },
   subtitle: { fontSize: 15, color: "#666" },
   body: { fontSize: 15, color: "#333", marginTop: 12 },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 8,
+  },
   sectionTitle: { fontSize: 16, fontWeight: "600", marginTop: 20, marginBottom: 8 },
+  sectionTitleInline: { fontSize: 16, fontWeight: "600" },
+  chatLink: { fontSize: 15, fontWeight: "600", color: "#2f6f4f" },
   member: { fontSize: 15, paddingVertical: 4 },
   streakBadge: { alignItems: "center", marginTop: 20 },
   streakNumber: { fontSize: 40, fontWeight: "800", color: "#2f6f4f" },

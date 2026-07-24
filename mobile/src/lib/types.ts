@@ -30,6 +30,22 @@ export interface PodMemberProfile {
   full_name: string | null;
 }
 
+export interface RitualInfo {
+  id: string;
+  ritual_type: string;
+  day_of_week: number;
+  start_time: string;
+  venues: { name: string };
+}
+
+export interface Message {
+  id: string;
+  pod_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+}
+
 export interface Streak {
   current_streak: number;
   longest_streak: number;
