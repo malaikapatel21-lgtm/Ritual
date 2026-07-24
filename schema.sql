@@ -188,3 +188,19 @@ create policy "members can post to their pod"
       where me.pod_id = messages.pod_id and me.user_id = auth.uid()
     )
   );
+
+-- ------------------------------------------------------------
+-- ritual_signup_counts — aggregate "N people are in" counts for
+-- the Phase 0 signup page. security definer because ritual_signups
+-- itself is locked to each user's own rows; this only ever returns
+-- a count per ritual, never who signed up.
+-- ------------------------------------------------------------
+create or replace function public.ritual_signup_counts()
+returns table (ritual_id uuid, waiting_count bigint) as $$
+  select ritual_id, count(*) as waiting_count
+  from public.ritual_signups
+  where status = 'waiting'
+  group by ritual_id;
+$$ language sql stable security definer;
+
+grant execute on function public.ritual_signup_counts() to anon, authenticated;

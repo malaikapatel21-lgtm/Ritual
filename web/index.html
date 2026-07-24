@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ritual Pods — Fremont</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Ritual Pods</h1>
+      <p class="tagline" id="tagline">Pick a weekly ritual in your neighborhood. We'll form your pod once enough people are in.</p>
+    </header>
+
+    <section id="signin-view" hidden>
+      <form id="signin-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+        <button type="submit">Get a sign-in link</button>
+      </form>
+      <p id="signin-status" class="status" role="status"></p>
+    </section>
+
+    <section id="app-view" hidden>
+      <p id="signed-in-as" class="status"></p>
+      <ul id="ritual-list" class="ritual-list"></ul>
+      <p id="empty-state" class="status" hidden>No rituals set up for this neighborhood yet.</p>
+    </section>
+  </main>
+
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
