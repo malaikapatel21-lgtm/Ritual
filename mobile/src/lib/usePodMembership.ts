@@ -35,7 +35,7 @@ export function usePodMembership(): PodMembership {
 
     const { data: signup } = await supabase
       .from("ritual_signups")
-      .select("status, rituals(id, ritual_type, day_of_week, start_time, check_in_code, venues(name))")
+      .select("status, rituals(id, ritual_type, day_of_week, start_time, check_in_code, price_cents, venues(name))")
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false })
       .limit(1)

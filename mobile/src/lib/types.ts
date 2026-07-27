@@ -36,7 +36,16 @@ export interface RitualInfo {
   day_of_week: number;
   start_time: string;
   check_in_code: string;
+  price_cents: number | null;
   venues: { name: string };
+}
+
+export type PaymentStatus = "incomplete" | "active" | "past_due" | "canceled";
+
+export interface Payment {
+  ritual_id: string;
+  status: PaymentStatus;
+  current_period_end: string | null;
 }
 
 export interface Message {

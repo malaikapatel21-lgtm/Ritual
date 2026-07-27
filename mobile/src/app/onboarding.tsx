@@ -15,8 +15,8 @@ import { hapticStep, hapticSuccess } from "@/lib/haptics";
 
 const OFFSET = 4;
 
-type Step = "city" | "ritualType" | "slot" | "vibeTags";
-const STEPS: Step[] = ["city", "ritualType", "slot", "vibeTags"];
+type Step = "city" | "referral" | "ritualType" | "slot" | "vibeTags";
+const STEPS: Step[] = ["city", "referral", "ritualType", "slot", "vibeTags"];
 
 export default function Onboarding() {
   const { session, markOnboardingComplete } = useAuth();
@@ -24,6 +24,8 @@ export default function Onboarding() {
   const [joined, setJoined] = useState(false);
 
   const [city, setCity] = useState("");
+  const [referralInput, setReferralInput] = useState("");
+  const [referrerId, setReferrerId] = useState<string | null>(null);
   const [rituals, setRituals] = useState<Ritual[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedRitualId, setSelectedRitualId] = useState<string | null>(null);
@@ -55,6 +57,25 @@ export default function Onboarding() {
       return;
     }
     setRituals(data as unknown as Ritual[]);
+    goToStep("referral");
+  }
+
+  async function resolveReferralCode() {
+    if (!referralInput.trim()) {
+      goToStep("ritualType");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const { data, error: rpcError } = await supabase.rpc("resolve_referral_code", {
+      p_code: referralInput.trim(),
+    });
+    setLoading(false);
+    if (rpcError || !data) {
+      setError("Code not found — double-check and try again, or skip.");
+      return;
+    }
+    setReferrerId(data as string);
     goToStep("ritualType");
   }
 
@@ -85,12 +106,19 @@ export default function Onboarding() {
       .from("ritual_signups")
       .insert({ ritual_id: selectedRitualId, user_id: session.user.id });
 
-    setLoading(false);
-
     if (signupError && signupError.code !== "23505") {
+      setLoading(false);
       setError(signupError.message);
       return;
     }
+
+    if (referrerId) {
+      await supabase
+        .from("referrals")
+        .insert({ referrer_id: referrerId, referred_id: session.user.id });
+    }
+
+    setLoading(false);
 
     hapticSuccess();
     setJoined(true);
@@ -154,6 +182,28 @@ export default function Onboarding() {
             title={loading ? "Looking…" : "Next"}
             onPress={loadRitualsForCity}
             disabled={!city.trim() || loading}
+          />
+        </Animated.View>
+      )}
+
+      {step === "referral" && (
+        <Animated.View key="referral" entering={FadeInRight.duration(400)} style={styles.step}>
+          <Text style={styles.title}>GOT A REFERRAL CODE?</Text>
+          <Text style={styles.subtitle}>A friend's code gives them credit when you subscribe. Skip if you don't have one.</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="XXXXXXXX"
+            placeholderTextColor={colors.muted}
+            value={referralInput}
+            onChangeText={(t) => setReferralInput(t.toUpperCase())}
+            autoCapitalize="characters"
+            maxLength={8}
+          />
+          {error && <Text style={styles.error}>{error}</Text>}
+          <PrimaryButton
+            title={loading ? "Checking…" : referralInput.trim() ? "Apply code" : "Skip"}
+            onPress={resolveReferralCode}
+            disabled={loading}
           />
         </Animated.View>
       )}
@@ -257,6 +307,7 @@ const styles = StyleSheet.create({
   },
   step: { flex: 1, gap: 14 },
   title: { fontFamily: fonts.display, fontSize: 24, color: colors.ink, marginBottom: 6, letterSpacing: 0.5 },
+  subtitle: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, lineHeight: 21 },
   input: {
     borderWidth: 2.5,
     borderColor: colors.ink,

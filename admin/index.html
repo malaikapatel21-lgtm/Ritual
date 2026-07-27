@@ -56,6 +56,8 @@
         <button type="button" class="tab-btn" data-tab="venues">Venues</button>
         <button type="button" class="tab-btn" data-tab="rituals">Rituals</button>
         <button type="button" class="tab-btn" data-tab="match">Manual match</button>
+        <button type="button" class="tab-btn" data-tab="billing">Billing</button>
+        <button type="button" class="tab-btn" data-tab="growth">Growth</button>
       </nav>
 
       <div id="tab-overview" class="tab-panel">
@@ -110,6 +112,7 @@
           <input id="ritual-time" type="time" required />
           <input id="ritual-min" type="number" min="1" placeholder="Min size" value="4" />
           <input id="ritual-max" type="number" min="1" placeholder="Max size" value="8" />
+          <input id="ritual-price" type="number" min="0" step="100" placeholder="Price (cents, blank = free)" />
           <button type="submit">Add ritual</button>
         </form>
         <p id="ritual-form-status" class="status" role="status"></p>
@@ -130,6 +133,38 @@
         <p id="waiting-empty" class="status" hidden>No one waiting for this ritual.</p>
         <button id="form-pod-btn" type="button" disabled>Form pod from selected</button>
         <p id="match-status" class="status" role="status"></p>
+      </div>
+
+      <div id="tab-billing" class="tab-panel" hidden>
+        <p class="status">Subscriber counts and monthly recurring revenue per ritual.</p>
+        <table class="data-table" id="billing-table">
+          <thead>
+            <tr>
+              <th>Ritual</th>
+              <th>Venue</th>
+              <th>Price / mo</th>
+              <th>Active subscribers</th>
+              <th>MRR</th>
+            </tr>
+          </thead>
+          <tbody id="billing-body"></tbody>
+        </table>
+        <p id="billing-empty" class="status" hidden>No paid rituals yet.</p>
+      </div>
+
+      <div id="tab-growth" class="tab-panel" hidden>
+        <p class="status">Members driving the most referrals.</p>
+        <table class="data-table" id="growth-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Referrals</th>
+              <th>Rewards granted</th>
+            </tr>
+          </thead>
+          <tbody id="growth-body"></tbody>
+        </table>
+        <p id="growth-empty" class="status" hidden>No referrals yet.</p>
       </div>
 
       <button id="app-sign-out-btn" type="button" class="sign-out">Sign out</button>

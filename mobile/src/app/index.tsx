@@ -206,6 +206,15 @@ export default function PodHome() {
               style={styles.checkInButton}
             />
 
+            <View style={styles.footerLinks}>
+              <Pressable onPress={() => router.push("/membership")}>
+                <Text style={[styles.footerLink, { color: accent }]}>MEMBERSHIP →</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/invite")}>
+                <Text style={[styles.footerLink, { color: accent }]}>INVITE FRIENDS →</Text>
+              </Pressable>
+            </View>
+
             <Pressable onPress={signOut}>
               <Text style={styles.signOut}>SIGN OUT</Text>
             </Pressable>
@@ -257,6 +266,8 @@ const styles = StyleSheet.create({
   memberBullet: { width: 8, height: 8, borderRadius: 1 },
   member: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.ink, letterSpacing: 0.3 },
   checkInButton: { marginTop: 12 },
+  footerLinks: { marginTop: 20, gap: 10 },
+  footerLink: { fontFamily: fonts.labelSemibold, fontSize: 15, letterSpacing: 0.5 },
   signOut: {
     fontFamily: fonts.labelSemibold,
     color: colors.muted,

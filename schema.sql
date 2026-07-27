@@ -456,3 +456,152 @@ end;
 $$ language plpgsql stable security definer;
 
 grant execute on function public.admin_waiting_signups(uuid) to authenticated;
+
+-- ------------------------------------------------------------
+-- Monetization — per the plan's own caveat ("don't add payments
+-- until you have 3+ consecutive weeks of real attendance data per
+-- pod"), a ritual stays free until an admin explicitly sets a price.
+-- price_cents is nullable on purpose: null means "not monetized yet",
+-- not "free forever."
+-- ------------------------------------------------------------
+alter table public.rituals add column if not exists price_cents integer;
+alter table public.rituals add column if not exists stripe_price_id text;
+
+-- profiles gains a Stripe customer id (created lazily on first
+-- checkout attempt, by createCheckoutSession) and a referral code
+-- (present from creation, used to build a shareable invite link).
+alter table public.profiles add column if not exists stripe_customer_id text;
+alter table public.profiles add column if not exists referral_code text;
+update public.profiles set referral_code = upper(substr(md5(random()::text || id::text), 1, 8))
+  where referral_code is null;
+alter table public.profiles alter column referral_code set default upper(substr(md5(random()::text), 1, 8));
+alter table public.profiles alter column referral_code set not null;
+create unique index if not exists profiles_referral_code_idx on public.profiles (referral_code);
+
+-- ------------------------------------------------------------
+-- payments — one row per (user, ritual) subscription. Only ever
+-- written by the createCheckoutSession / stripeWebhook Edge
+-- Functions running under the service role; RLS here is
+-- select-only for the owner, matching the pattern used for
+-- pod_members/attendance/streaks (server writes, client reads).
+-- ------------------------------------------------------------
+create table if not exists public.payments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  ritual_id uuid not null references public.rituals (id) on delete cascade,
+  stripe_customer_id text not null,
+  stripe_checkout_session_id text,
+  stripe_subscription_id text,
+  status text not null default 'incomplete'
+    check (status in ('incomplete', 'active', 'past_due', 'canceled')),
+  current_period_end timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, ritual_id)
+);
+
+create index if not exists payments_user_id_idx on public.payments (user_id);
+create index if not exists payments_stripe_subscription_id_idx on public.payments (stripe_subscription_id);
+
+alter table public.payments enable row level security;
+create policy "users can see their own payments"
+  on public.payments for select using (auth.uid() = user_id);
+
+-- ------------------------------------------------------------
+-- referrals — one row per referred user (a user can only ever be
+-- referred once; who referred them never changes). reward_granted
+-- flips to true the first time the referred user completes a
+-- successful checkout (see supabase/functions/stripeWebhook), at
+-- which point the referrer gets a Stripe account credit.
+-- ------------------------------------------------------------
+create table if not exists public.referrals (
+  id uuid primary key default gen_random_uuid(),
+  referrer_id uuid not null references public.profiles (id) on delete cascade,
+  referred_id uuid not null references public.profiles (id) on delete cascade,
+  reward_granted boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (referred_id),
+  check (referrer_id <> referred_id)
+);
+
+create index if not exists referrals_referrer_id_idx on public.referrals (referrer_id);
+
+alter table public.referrals enable row level security;
+create policy "users can see referrals they made"
+  on public.referrals for select using (auth.uid() = referrer_id);
+create policy "a user can record their own referral"
+  on public.referrals for insert with check (auth.uid() = referred_id);
+
+-- resolve_referral_code(): turns a code into the referrer's user_id
+-- without exposing anything else about that profile. Used by
+-- onboarding to record a referral without needing broad read access
+-- to other people's profiles.
+create or replace function public.resolve_referral_code(p_code text)
+returns uuid as $$
+  select id from public.profiles where referral_code = upper(trim(p_code))
+$$ language sql stable security definer;
+
+grant execute on function public.resolve_referral_code(text) to authenticated;
+
+-- admin_billing_overview(): subscriber counts + MRR per ritual,
+-- admin-gated like the rest of the ops dashboard's RPCs.
+create or replace function public.admin_billing_overview()
+returns table (
+  ritual_id uuid,
+  ritual_type text,
+  venue_name text,
+  price_cents integer,
+  active_subscribers bigint,
+  mrr_cents bigint
+) as $$
+begin
+  if not is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  return query
+  select
+    r.id,
+    r.ritual_type,
+    v.name,
+    r.price_cents,
+    count(p.id) filter (where p.status = 'active'),
+    count(p.id) filter (where p.status = 'active') * coalesce(r.price_cents, 0)
+  from public.rituals r
+  join public.venues v on v.id = r.venue_id
+  left join public.payments p on p.ritual_id = r.id
+  group by r.id, r.ritual_type, v.name, r.price_cents
+  order by v.name, r.ritual_type;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.admin_billing_overview() to authenticated;
+
+-- admin_top_referrers(): who's actually driving growth, most
+-- successful referrals first.
+create or replace function public.admin_top_referrers()
+returns table (
+  referrer_id uuid,
+  full_name text,
+  referral_count bigint,
+  rewarded_count bigint
+) as $$
+begin
+  if not is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  return query
+  select
+    r.referrer_id,
+    pr.full_name,
+    count(*),
+    count(*) filter (where r.reward_granted)
+  from public.referrals r
+  join public.profiles pr on pr.id = r.referrer_id
+  group by r.referrer_id, pr.full_name
+  order by count(*) desc;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.admin_top_referrers() to authenticated;

@@ -95,7 +95,7 @@ async function handleSession(session) {
   }
 
   show("app");
-  await Promise.all([loadOverview(), loadVenues(), loadRituals()]);
+  await Promise.all([loadOverview(), loadVenues(), loadRituals(), loadBilling(), loadGrowth()]);
 }
 
 supabase.auth.onAuthStateChange((_event, session) => {
@@ -405,6 +405,9 @@ document.getElementById("ritual-form").addEventListener("submit", async (event) 
   const minSize = Number(document.getElementById("ritual-min").value) || 4;
   const maxSize = Number(document.getElementById("ritual-max").value) || 8;
 
+  const priceRaw = document.getElementById("ritual-price").value.trim();
+  const priceCents = priceRaw ? Number(priceRaw) : null;
+
   const { error } = await supabase.from("rituals").insert({
     venue_id: venueId,
     ritual_type: ritualType,
@@ -412,6 +415,7 @@ document.getElementById("ritual-form").addEventListener("submit", async (event) 
     start_time: startTime,
     min_pod_size: minSize,
     max_pod_size: maxSize,
+    price_cents: priceCents,
   });
 
   if (error) {
@@ -547,3 +551,72 @@ document.getElementById("form-pod-btn").addEventListener("click", async () => {
   await loadWaitingList(ritualId);
   await loadOverview();
 });
+
+// ---------------------------------------------------------------
+// Billing
+// ---------------------------------------------------------------
+
+function formatPrice(cents) {
+  if (cents == null) return "—";
+  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+}
+
+async function loadBilling() {
+  const { data, error } = await supabase.rpc("admin_billing_overview");
+  const tbody = document.getElementById("billing-body");
+  const empty = document.getElementById("billing-empty");
+
+  if (error) {
+    tbody.innerHTML = "";
+    empty.hidden = false;
+    empty.textContent = `Couldn't load billing: ${error.message}`;
+    return;
+  }
+
+  const rows = data ?? [];
+  empty.hidden = rows.length > 0;
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+        <tr>
+          <td>${r.ritual_type}</td>
+          <td>${r.venue_name}</td>
+          <td>${formatPrice(r.price_cents)}/mo</td>
+          <td>${r.active_subscribers}</td>
+          <td>${formatPrice(r.mrr_cents)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+// ---------------------------------------------------------------
+// Growth
+// ---------------------------------------------------------------
+
+async function loadGrowth() {
+  const { data, error } = await supabase.rpc("admin_top_referrers");
+  const tbody = document.getElementById("growth-body");
+  const empty = document.getElementById("growth-empty");
+
+  if (error) {
+    tbody.innerHTML = "";
+    empty.hidden = false;
+    empty.textContent = `Couldn't load growth data: ${error.message}`;
+    return;
+  }
+
+  const rows = data ?? [];
+  empty.hidden = rows.length > 0;
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+        <tr>
+          <td>${r.full_name ?? "(no name)"}</td>
+          <td>${r.referral_count}</td>
+          <td>${r.rewarded_count}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
