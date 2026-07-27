@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ritual — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@600;700&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="sunburst"></div>
+  </div>
+
+  <main class="wrap">
+    <header>
+      <p class="kicker">Founder tools</p>
+      <h1>Ops Dashboard</h1>
+      <p class="tagline">Rituals, venues, and match overrides across every neighborhood.</p>
+    </header>
+
+    <section id="signin-view" hidden>
+      <form id="signin-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" required placeholder="you@ritualpods.com" autocomplete="email" />
+        <button type="submit">Send code</button>
+      </form>
+      <p id="signin-status" class="status" role="status"></p>
+    </section>
+
+    <section id="verify-view" hidden>
+      <form id="verify-form">
+        <label for="code">6-digit code</label>
+        <input id="code" inputmode="numeric" maxlength="6" required placeholder="123456" />
+        <button type="submit">Verify</button>
+      </form>
+      <p id="verify-status" class="status" role="status"></p>
+    </section>
+
+    <section id="not-admin-view" hidden>
+      <p class="status">
+        This account isn't an admin. Ask an existing admin to run:
+      </p>
+      <pre class="code-block">insert into public.admins (user_id) values ('&lt;your-profile-id&gt;');</pre>
+      <button id="sign-out-btn" type="button">Sign out</button>
+    </section>
+
+    <section id="app-view" hidden>
+      <nav class="tabs">
+        <button type="button" class="tab-btn active" data-tab="overview">Overview</button>
+        <button type="button" class="tab-btn" data-tab="venues">Venues</button>
+        <button type="button" class="tab-btn" data-tab="rituals">Rituals</button>
+        <button type="button" class="tab-btn" data-tab="match">Manual match</button>
+        <button type="button" class="tab-btn" data-tab="billing">Billing</button>
+        <button type="button" class="tab-btn" data-tab="growth">Growth</button>
+      </nav>
+
+      <div id="tab-overview" class="tab-panel">
+        <p class="status">Every ritual, across every venue and neighborhood.</p>
+        <table class="data-table" id="overview-table">
+          <thead>
+            <tr>
+              <th>Ritual</th>
+              <th>Venue</th>
+              <th>Neighborhood</th>
+              <th>When</th>
+              <th>Waiting</th>
+              <th>Active pods</th>
+              <th>Members</th>
+              <th>Avg streak</th>
+            </tr>
+          </thead>
+          <tbody id="overview-body"></tbody>
+        </table>
+        <p id="overview-empty" class="status" hidden>No rituals yet.</p>
+      </div>
+
+      <div id="tab-venues" class="tab-panel" hidden>
+        <h2>Add a venue</h2>
+        <form id="venue-form" class="inline-form">
+          <input id="venue-name" placeholder="Name" required />
+          <input id="venue-address" placeholder="Address (optional)" />
+          <input id="venue-city" placeholder="City" required />
+          <input id="venue-neighborhood" placeholder="Neighborhood" />
+          <button type="submit">Add venue</button>
+        </form>
+        <p id="venue-form-status" class="status" role="status"></p>
+
+        <h2>Existing venues</h2>
+        <ul id="venues-list" class="record-list"></ul>
+      </div>
+
+      <div id="tab-rituals" class="tab-panel" hidden>
+        <h2>Add a ritual</h2>
+        <form id="ritual-form" class="inline-form">
+          <select id="ritual-venue" required></select>
+          <input id="ritual-type" placeholder="Type (sauna, walk, ...)" required />
+          <select id="ritual-day" required>
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+          <input id="ritual-time" type="time" required />
+          <input id="ritual-min" type="number" min="1" placeholder="Min size" value="4" />
+          <input id="ritual-max" type="number" min="1" placeholder="Max size" value="8" />
+          <input id="ritual-price" type="number" min="0" step="100" placeholder="Price (cents, blank = free)" />
+          <button type="submit">Add ritual</button>
+        </form>
+        <p id="ritual-form-status" class="status" role="status"></p>
+
+        <h2>Existing rituals</h2>
+        <ul id="rituals-list" class="record-list"></ul>
+      </div>
+
+      <div id="tab-match" class="tab-panel" hidden>
+        <p class="status">
+          Hand-pick waiting signups and form a pod right now, bypassing the
+          weekly matcher's minimum pod size — use this for an override, not
+          as the default path.
+        </p>
+        <label for="match-ritual">Ritual</label>
+        <select id="match-ritual"></select>
+        <ul id="waiting-list" class="record-list"></ul>
+        <p id="waiting-empty" class="status" hidden>No one waiting for this ritual.</p>
+        <button id="form-pod-btn" type="button" disabled>Form pod from selected</button>
+        <p id="match-status" class="status" role="status"></p>
+      </div>
+
+      <div id="tab-billing" class="tab-panel" hidden>
+        <p class="status">Subscriber counts and monthly recurring revenue per ritual.</p>
+        <table class="data-table" id="billing-table">
+          <thead>
+            <tr>
+              <th>Ritual</th>
+              <th>Venue</th>
+              <th>Price / mo</th>
+              <th>Active subscribers</th>
+              <th>MRR</th>
+            </tr>
+          </thead>
+          <tbody id="billing-body"></tbody>
+        </table>
+        <p id="billing-empty" class="status" hidden>No paid rituals yet.</p>
+      </div>
+
+      <div id="tab-growth" class="tab-panel" hidden>
+        <p class="status">Members driving the most referrals.</p>
+        <table class="data-table" id="growth-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Referrals</th>
+              <th>Rewards granted</th>
+            </tr>
+          </thead>
+          <tbody id="growth-body"></tbody>
+        </table>
+        <p id="growth-empty" class="status" hidden>No referrals yet.</p>
+      </div>
+
+      <button id="app-sign-out-btn" type="button" class="sign-out">Sign out</button>
+    </section>
+  </main>
+
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

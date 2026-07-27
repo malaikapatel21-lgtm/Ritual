@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ritual — Venue Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@600;700&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="sunburst"></div>
+  </div>
+
+  <main class="wrap">
+    <header>
+      <p class="kicker">Backstage</p>
+      <h1>Venue Dashboard</h1>
+      <p class="tagline">How your rituals are doing, at a glance.</p>
+    </header>
+
+    <section id="signin-view" hidden>
+      <form id="signin-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" required placeholder="you@venue.com" autocomplete="email" />
+        <button type="submit">Send code</button>
+      </form>
+      <p id="signin-status" class="status" role="status"></p>
+    </section>
+
+    <section id="verify-view" hidden>
+      <form id="verify-form">
+        <label for="code">6-digit code</label>
+        <input id="code" inputmode="numeric" maxlength="6" required placeholder="123456" />
+        <button type="submit">Verify</button>
+      </form>
+      <p id="verify-status" class="status" role="status"></p>
+    </section>
+
+    <section id="app-view" hidden>
+      <div id="venue-picker-row" class="venue-picker" hidden>
+        <label for="venue-picker">Venue</label>
+        <select id="venue-picker"></select>
+      </div>
+
+      <p id="no-venues" class="status" hidden>
+        This account isn't linked to a venue yet — contact us to get set up.
+      </p>
+
+      <ul id="ritual-stats" class="ritual-stats"></ul>
+      <p id="empty-state" class="status" hidden>No rituals at this venue yet.</p>
+
+      <p class="status footnote">
+        Rituals below a 3-week average streak are flagged — that's usually a
+        ritual/venue-fit problem, not a scheduling one.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
